@@ -8,6 +8,7 @@ import (
 	"os/exec"
 
 	"github.com/alecthomas/kong"
+	"github.com/yammerjp/optruck/internal/op"
 )
 
 /*
@@ -39,9 +40,28 @@ import (
 
 */
 
+type GetCmd struct {
+	Vault string `required:"" help:"1password vault name"`
+	ID    string `required:"" help:"1password item id"`
+}
+
+func (c *GetCmd) Run() error {
+	itemRequest := op.ItemRequest{
+		Vault: c.Vault,
+		ID:    c.ID,
+	}
+	item, err := itemRequest.GetItem()
+	if err != nil {
+		return err
+	}
+	fmt.Println(item)
+	return nil
+}
+
 type OptruckCmd struct {
 	Version kong.VersionFlag
 	Create  CreateCmd `cmd:"" help:"create kubernetes secret and 1password item"`
+	Get     GetCmd    `cmd:"" help:"get 1password item"`
 }
 
 func (c *OptruckCmd) Run() error {
