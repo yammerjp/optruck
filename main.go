@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -79,12 +80,19 @@ type CreateCmd struct {
 
 func (c *CreateCmd) Run() error {
 	// TODO: validate arguments
-	// TODO: create 1password item
-	if err := c.createMaskedSecretYaml(); err != nil {
+
+	itemRequest := op.ItemRequest{
+		Vault:    c.Vault,
+		IDorName: c.Name,
+	}
+	item, err := itemRequest.GetItem()
+	if err != nil {
 		return err
 	}
+	if item != nil {
+		return errors.New("item already exists")
+	}
 
-	// check if 1password item already exists
 	cmd := exec.Command("op", "item", "create", "--vault", c.Vault)
 	tmpl, err := c.createSecretTemplateJson()
 	if err != nil {
@@ -98,6 +106,11 @@ func (c *CreateCmd) Run() error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
+	// TODO: create 1password item
+	if err := c.createMaskedSecretYaml(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

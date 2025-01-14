@@ -3,15 +3,17 @@ package op
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os/exec"
+	"strings"
 )
 
-type ItemRequest struct {
-	Vault string
-	ID    string
+type ItemGetRequest struct {
+	Vault    string
+	IDorName string
 }
 
-type ItemResponse struct {
+type Item struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
 	Vault struct {
@@ -30,33 +32,39 @@ type ItemResponse struct {
 	} `json:"fields"`
 }
 
-func (req *ItemRequest) GetItem() (*ItemResponse, error) {
-	cmd := exec.Command("op", "item", "get", req.ID, "--vault", req.Vault, "--format", "json")
+type ItemGetResponse Item
+
+type ItemCreateRequest Item
+
+func (req *ItemGetRequest) GetItem() (*ItemGetResponse, error) {
+	cmd := exec.Command("op", "item", "get", req.IDorName, "--vault", req.Vault, "--format", "json")
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
+	err := cmd.Run()
+	stderrStr := stderr.String()
+
+	if err != nil && strings.Contains(stderrStr, "More than one item matches") {
+		return nil, nil
+	} else if err != nil && strings.Contains(stderrStr, "Item not found") {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
+	} else if stderr.Len() > 0 {
+		return nil, errors.New("Unknown errror: stderr contains " + stderr.String())
 	}
-	// TODO: stderrの中の文字列もチェック
-	// exit codeが1かつstderrに"More than one item matches"が含まれているときは、itemが複数存在する
-	// exit codeが1かつstderrに"Item not found"が含まれているときは、itemが存在しない
 
-	// $ op item get example.com --format json
-	// [ERROR] 2025/01/14 08:22:56 "example.com" isn't an item. Specify the item with its UUID, name, or domain.
-	// $ op item get xxxxxxxxxxxxx.jp --format json
-	// [ERROR] 2025/01/14 08:23:10 More than one item matches "xxxxxxxxxxxxxxx.jp". Try again and specify the item by its ID:
-	//    * for the item "xxxxxxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxx" in vault vault-name: xxxxxxxxxxxxxxxxxxxxxxxxxx
-	//    * for the item "xxxxxxxxxxxxxxxx xxxx" in vault vault-name: xxxxxxxxxxxxxxxxxxxxxxxxxx
-
-	//
-
-	var item ItemResponse
+	var item ItemGetResponse
 	if err := json.Unmarshal(stdout.Bytes(), &item); err != nil {
 		return nil, err
 	}
 	return &item, nil
+}
+
+func (req *ItemCreateRequest) CreateItem() error {
+	cmd := exec.Command("op", "item", "create")
+	// TODO: stdinにjsonを渡す
 }
 
 /*
