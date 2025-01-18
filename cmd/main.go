@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/alecthomas/kong"
+	"github.com/yammerjp/optruck/pkg/dotenv"
 )
 
 /*
@@ -79,13 +81,13 @@ type KubeRestoreCmd struct {
 }
 
 func (c *DotenvStoreCmd) Run() error {
-	fmt.Println("dotenv store")
-	return nil
+	client := dotenv.BuildClient()
+	return client.StoreFromFile(context.Background(), c.Vault, c.Name, c.File)
 }
 
 func (c *DotenvRestoreCmd) Run() error {
-	fmt.Println("dotenv restore")
-	return nil
+	client := dotenv.BuildClient()
+	return client.RestoreToFile(context.Background(), c.Vault, c.Name, c.File)
 }
 
 func (c *KubeStoreCmd) Run() error {
