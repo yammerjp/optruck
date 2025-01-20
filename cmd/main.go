@@ -51,10 +51,11 @@ type DotenvCmd struct {
 }
 
 type DotenvStoreCmd struct {
-	Account string `required:"" help:"1password account name"`
-	Vault   string `required:"" help:"1password vault name"`
-	Name    string `required:"" help:"1password item name"`
-	File    string `default:".env" help:"file path to store"`
+	Account  string `required:"" help:"1password account name"`
+	Vault    string `required:"" help:"1password vault name"`
+	Name     string `required:"" help:"1password item name"`
+	File     string `default:".env" help:"file path to store"`
+	Template string `default:".env.1password" help:"file path to output template"`
 }
 
 type DotenvRestoreCmd struct {
@@ -86,7 +87,7 @@ type KubeRestoreCmd struct {
 
 func (c *DotenvStoreCmd) Run() error {
 	client := dotenv.BuildClient()
-	return client.StoreFromFile(context.Background(), c.Account, c.Vault, c.Name, c.File)
+	return client.StoreFromFile(context.Background(), c.Account, c.Vault, c.Name, c.File, c.Template)
 }
 
 func (c *DotenvRestoreCmd) Run() error {
