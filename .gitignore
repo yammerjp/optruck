@@ -1,2 +1,3 @@
 *.optruck.yaml
 .env
+optruck
