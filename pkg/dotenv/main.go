@@ -22,7 +22,7 @@ func NewClient(opClient *op.Client) *Client {
 	return &Client{opClient: opClient}
 }
 
-func (c *Client) StoreFromFile(ctx context.Context, vaultName, itemName, inputFilePath string) error {
+func (c *Client) StoreFromFile(ctx context.Context, accountName, vaultName, itemName, inputFilePath string) error {
 	reader, err := os.Open(inputFilePath)
 	if err != nil {
 		return err
@@ -34,10 +34,10 @@ func (c *Client) StoreFromFile(ctx context.Context, vaultName, itemName, inputFi
 		return err
 	}
 
-	return c.opClient.CreateItem(ctx, vaultName, itemName, envPairs)
+	return c.opClient.CreateItem(ctx, accountName, vaultName, itemName, envPairs)
 }
 
-func (c *Client) RestoreToFile(ctx context.Context, vaultName, itemName, outputFilePath string) error {
-	fmt.Println("restore to file", vaultName, itemName, outputFilePath)
+func (c *Client) RestoreToFile(ctx context.Context, accountName, vaultName, itemName, outputFilePath string) error {
+	fmt.Println("restore to file", accountName, vaultName, itemName, outputFilePath)
 	return nil
 }

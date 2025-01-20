@@ -13,16 +13,16 @@ import (
 optruck: build dotenv/kubernetes secrets from 1password vaults
 
 # filepathをもとに、1passwordのitemを作成する
-$ optruck dotenv store --vault <vault-name> --name <name> --file <file-path>
+$ optruck dotenv store --account <account-name> --vault <vault-name> --name <name> --file <file-path>
 # 1passwordのitemをもとに、.envファイルを作成する
-$ optruck dotenv restore --vault <vault-name> --name <name> --file <file-path>
+$ optruck dotenv restore --account <account-name> --vault <vault-name> --name <name> --file <file-path>
 
 # kubernetes secretをもとに、1passwordのitemを作成する。作成後、復元のためのtemplateを出力する
-$ optruck kube secret store --vault <vault-name> --name <name> --file <secret-file-path> --output <template-file-path>
+$ optruck kube secret store --account <account-name> --vault <vault-name> --name <name> --file <secret-file-path> --output <template-file-path>
 
 # 1passwordのitemとtemplateをもとに、kubernetes secretを作成する
-$ optruck kube secret restore --vault <vault-name> --name <name>  --output <secret-file-path>
-$ optruck kube secret restore --file=<template-file-path> --output <secret-file-path>
+$ optruck kube secret restore --account <account-name> --vault <vault-name> --name <name>  --output <secret-file-path>
+$ optruck kube secret restore --account <account-name> --file=<template-file-path> --output <secret-file-path>
 
 ```template-file-path
 apiVersion: v1
@@ -51,15 +51,17 @@ type DotenvCmd struct {
 }
 
 type DotenvStoreCmd struct {
-	Vault string `required:"" help:"1password vault name"`
-	Name  string `required:"" help:"1password item name"`
-	File  string `default:".env" help:"file path to store"`
+	Account string `required:"" help:"1password account name"`
+	Vault   string `required:"" help:"1password vault name"`
+	Name    string `required:"" help:"1password item name"`
+	File    string `default:".env" help:"file path to store"`
 }
 
 type DotenvRestoreCmd struct {
-	Vault string `required:"" help:"1password vault name"`
-	Name  string `required:"" help:"1password item name"`
-	File  string `required:"" help:"file path to restore"`
+	Account string `required:"" help:"1password account name"`
+	Vault   string `required:"" help:"1password vault name"`
+	Name    string `required:"" help:"1password item name"`
+	File    string `required:"" help:"file path to restore"`
 }
 
 type KubeCmd struct {
@@ -68,26 +70,28 @@ type KubeCmd struct {
 }
 
 type KubeStoreCmd struct {
-	Vault  string `required:"" help:"1password vault name"`
-	Name   string `required:"" help:"1password item name"`
-	File   string `required:"" help:"file path to store"`
-	Output string `required:"" help:"file path to output template"`
+	Account string `required:"" help:"1password account name"`
+	Vault   string `required:"" help:"1password vault name"`
+	Name    string `required:"" help:"1password item name"`
+	File    string `required:"" help:"file path to store"`
+	Output  string `required:"" help:"file path to output template"`
 }
 
 type KubeRestoreCmd struct {
-	Vault string `required:"" help:"1password vault name"`
-	Name  string `required:"" help:"1password item name"`
-	File  string `required:"" help:"file path to store"`
+	Account string `required:"" help:"1password account name"`
+	Vault   string `required:"" help:"1password vault name"`
+	Name    string `required:"" help:"1password item name"`
+	File    string `required:"" help:"file path to store"`
 }
 
 func (c *DotenvStoreCmd) Run() error {
 	client := dotenv.BuildClient()
-	return client.StoreFromFile(context.Background(), c.Vault, c.Name, c.File)
+	return client.StoreFromFile(context.Background(), c.Account, c.Vault, c.Name, c.File)
 }
 
 func (c *DotenvRestoreCmd) Run() error {
 	client := dotenv.BuildClient()
-	return client.RestoreToFile(context.Background(), c.Vault, c.Name, c.File)
+	return client.RestoreToFile(context.Background(), c.Account, c.Vault, c.Name, c.File)
 }
 
 func (c *KubeStoreCmd) Run() error {
