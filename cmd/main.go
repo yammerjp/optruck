@@ -10,19 +10,70 @@ import (
 )
 
 /*
-optruck: build dotenv/kubernetes secrets from 1password vaults
+optruck: build dotenv files or kubernetes secrets with 1password vaults
 
-# filepathをもとに、1passwordのitemを作成する
-$ optruck dotenv store --account <account-name> --vault <vault-name> --name <name> --file <file-path>
-# 1passwordのitemをもとに、.envファイルを作成する
-$ optruck dotenv restore --account <account-name> --vault <vault-name> --name <name> --file <file-path>
+Usage:
 
-# kubernetes secretをもとに、1passwordのitemを作成する。作成後、復元のためのtemplateを出力する
-$ optruck kube secret store --account <account-name> --vault <vault-name> --name <name> --file <secret-file-path> --output <template-file-path>
+	optruck [COMMAND] [OPTIONS]
 
-# 1passwordのitemとtemplateをもとに、kubernetes secretを作成する
-$ optruck kube secret restore --account <account-name> --vault <vault-name> --name <name>  --output <secret-file-path>
-$ optruck kube secret restore --account <account-name> --file=<template-file-path> --output <secret-file-path>
+Description:
+
+	This CLI tool is for managing environment variable files (.env), 1Password, and Kubernetes Secrets.
+	It allows you to store .env files or Kubernetes Secrets, generate templates from 1Password, and create snapshots for easy restoration.
+
+Commands:
+
+	dotenv              Operations for .env files
+	  store             Store the current .env in 1Password.
+	  generate          Generate a .env.1password template from 1Password.
+	  snapshot          Take a snapshot of the current .env state and make it restorable.
+
+	kube-secret         Operations for Kubernetes Secrets
+	  store             Store the current Kubernetes Secret.
+	  snapshot          Take a snapshot of the current Kubernetes Secret state and make it restorable.
+	  generate          Generate a YAML template for Kubernetes Secrets with placeholders for `op inject`.
+
+	interactive         Launch interactive mode to guide you through the process.
+
+Options:
+
+	--item <ITEM>         Specify the 1Password Item to use.
+	                      Default: inferred from the .env file name or Kubernetes Secret name.
+	--vault <VAULT>       Specify the 1Password Vault to use.
+	                      Default: user's default Vault.
+	--account <ACCOUNT>   Specify the 1Password account to use.
+	                      Useful when working with multiple accounts.
+	--k8s-secret <SECRET> Specify the Kubernetes Secret to use.
+	                      Default: the default Kubernetes Secret name.
+	--namespace <NAMESPACE> Kubernetes namespace to use.
+	                      Default: the current namespace.
+	--context <CONTEXT>   Kubernetes context to use.
+	                      Default: the current context.
+	--template-file <FILE> Specify the file path to the template file.
+	                      Default: <name-secret>.1password.yaml
+	--env-file <FILE>     Specify the file path to the .env file.
+	                      Default: .env
+	--help                Show help message.
+
+Examples:
+
+	# Store the current .env in 1Password
+	optruck dotenv store --vault development --item my-project-env
+
+	# Store the current Kubernetes Secret
+	optruck kube-secret store --k8s-secret my-secret --namespace default
+
+	# Generate a Kubernetes Secret YAML template with placeholders
+	optruck kube-secret generate --k8s-secret my-secret --namespace default
+
+	# Create a snapshot of the current .env state
+	optruck dotenv snapshot --vault development --item my-project-env
+
+	# Create a snapshot of the current Kubernetes Secret state
+	optruck kube-secret snapshot --k8s-secret my-secret --namespace default
+
+	# Launch interactive mode to guide through the process
+	optruck interactive
 
 ```template-file-path
 apiVersion: v1
