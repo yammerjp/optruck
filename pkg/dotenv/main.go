@@ -32,7 +32,7 @@ func (c *Client) readEnvFile(filePath string) (map[string]string, error) {
 	return godotenv.Parse(reader)
 }
 
-func (c *Client) writeEnvTemplateFile(filePath string, resp *op.ItemCreateResponse) error {
+func (c *Client) WriteEnvTemplateFile(filePath string, resp *op.ItemCreateResponse) error {
 	writer, err := os.Create(filePath)
 	if err != nil {
 		return err
@@ -59,18 +59,33 @@ func (c *Client) writeEnvTemplateFile(filePath string, resp *op.ItemCreateRespon
 	return nil
 }
 
-func (c *Client) StoreFromFile(ctx context.Context, accountName, vaultName, itemName, inputFilePath, templateFilePath string) error {
+// check file exists
+func (c *Client) CheckFileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
+	return err == nil
+}
+
+func (c *Client) Upload(accountName, vaultName, itemName, inputFilePath string) (*op.ItemCreateResponse, error) {
+	envPairs, err := c.readEnvFile(inputFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.opClient.CreateItem(accountName, vaultName, itemName, envPairs)
+}
+
+func (c *Client) Mirror(accountName, vaultName, itemName, inputFilePath, templateFilePath string) error {
 	envPairs, err := c.readEnvFile(inputFilePath)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.opClient.CreateItem(ctx, accountName, vaultName, itemName, envPairs)
+	resp, err := c.opClient.CreateItem(accountName, vaultName, itemName, envPairs)
 	if err != nil {
 		return err
 	}
 
-	return c.writeEnvTemplateFile(templateFilePath, resp)
+	return c.WriteEnvTemplateFile(templateFilePath, resp)
 }
 
 func (c *Client) RestoreToFile(ctx context.Context, accountName, vaultName, itemName, outputFilePath string) error {

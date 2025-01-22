@@ -2,7 +2,6 @@ package op
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -64,7 +63,7 @@ type GetItemResponse struct {
 	} `json:"fields"`
 }
 
-func (c *Client) GetItem(ctx context.Context, accountName, vaultName, itemName string) (*GetItemResponse, error) {
+func (c *Client) GetItem(accountName, vaultName, itemName string) (*GetItemResponse, error) {
 	cmd := exec.Command("op", "get", "item", itemName, "--vault", vaultName, "--account", accountName)
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)

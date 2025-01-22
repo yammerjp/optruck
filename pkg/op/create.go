@@ -2,7 +2,6 @@ package op
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -49,7 +48,7 @@ type ItemCreateRequestField struct {
 	Value   string
 }
 
-func (c *Client) BuildCreateItemRequest(ctx context.Context, itemName string, envPairs map[string]string) (ItemCreateRequest, error) {
+func (c *Client) BuildCreateItemRequest(itemName string, envPairs map[string]string) (ItemCreateRequest, error) {
 	ret := ItemCreateRequest{
 		Title:    itemName,
 		Category: "LOGIN",
@@ -130,21 +129,30 @@ type ItemCreateResponseField struct {
 	} `json:"password_details"`
 }
 
-func (c *Client) CreateItem(ctx context.Context, accountName, vaultName, itemName string, envPairs map[string]string) (*ItemCreateResponse, error) {
-	req, err := c.BuildCreateItemRequest(ctx, itemName, envPairs)
+func (c *Client) CreateItem(accountName, vaultName, itemName string, envPairs map[string]string) (*ItemCreateResponse, error) {
+	req, err := c.BuildCreateItemRequest(itemName, envPairs)
 	if err != nil {
 		return nil, err
 	}
-	return c.CreateItemByRequest(ctx, accountName, vaultName, req)
+	return c.CreateItemByRequest(accountName, vaultName, req)
 }
 
-func (c *Client) CreateItemByRequest(ctx context.Context, accountName, vaultName string, req ItemCreateRequest) (*ItemCreateResponse, error) {
+func (c *Client) CreateItemByRequest(accountName, vaultName string, req ItemCreateRequest) (*ItemCreateResponse, error) {
 	reqStr, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := exec.Command("op", "item", "create", "--account", accountName, "--vault", vaultName, "--format", "json")
+	cmdArgs := []string{"item", "create", "--format", "json"}
+
+	if accountName != "" {
+		cmdArgs = append(cmdArgs, "--account", accountName)
+	}
+	if vaultName != "" {
+		cmdArgs = append(cmdArgs, "--vault", vaultName)
+	}
+
+	cmd := exec.Command("op", cmdArgs...)
 	cmd.Stdin = bytes.NewBuffer(reqStr)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
