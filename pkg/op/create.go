@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
-	"os/exec"
 )
 
 /*
@@ -152,12 +151,12 @@ func (c *Client) CreateItemByRequest(accountName, vaultName string, req ItemCrea
 		cmdArgs = append(cmdArgs, "--vault", vaultName)
 	}
 
-	cmd := exec.Command("op", cmdArgs...)
-	cmd.Stdin = bytes.NewBuffer(reqStr)
+	cmd := c.exec.Command("op", cmdArgs...)
+	cmd.SetStdin(bytes.NewBuffer(reqStr))
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmd.SetStdout(&stdout)
+	cmd.SetStderr(&stderr)
 
 	err = cmd.Run()
 	os.Stderr.Write(stderr.Bytes())

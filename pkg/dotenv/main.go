@@ -14,7 +14,7 @@ type Client struct {
 }
 
 func BuildClient() *Client {
-	opClient := op.NewClient()
+	opClient := op.BuildClient()
 	return &Client{opClient: opClient}
 }
 

@@ -1,11 +1,19 @@
 package op
 
-type Client struct{}
+import (
+	"k8s.io/utils/exec"
+)
 
-func NewClient() *Client {
-	return &Client{}
+type Client struct {
+	exec exec.Interface
+}
+
+func NewClient(exec exec.Interface) *Client {
+	return &Client{
+		exec: exec,
+	}
 }
 
 func BuildClient() *Client {
-	return NewClient()
+	return NewClient(exec.New())
 }

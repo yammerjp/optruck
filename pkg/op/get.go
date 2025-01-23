@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os/exec"
 	"strings"
 )
 
@@ -64,11 +63,11 @@ type GetItemResponse struct {
 }
 
 func (c *Client) GetItem(accountName, vaultName, itemName string) (*GetItemResponse, error) {
-	cmd := exec.Command("op", "get", "item", itemName, "--vault", vaultName, "--account", accountName)
+	cmd := c.exec.Command("op", "get", "item", itemName, "--vault", vaultName, "--account", accountName)
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
-	cmd.Stdout = stdoutBuffer
-	cmd.Stderr = stderrBuffer
+	cmd.SetStdout(stdoutBuffer)
+	cmd.SetStderr(stderrBuffer)
 
 	var resp GetItemResponse
 	if err := cmd.Run(); err != nil {
