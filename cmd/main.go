@@ -52,7 +52,7 @@ Output Options:
 
 General Options:
   --vault <name>        Name of the 1Password Vault. If omitted, the default Vault is used.
-  --account <email>     1Password account email address. If omitted, the default account is used.
+  --account <url>       1Password account URL. If omitted, the default account is used.
   --overwrite           Overwrite the existing 1Password item and the output file if they exist.
   --interactive         Enable interactive mode for selecting the item, account, and vault.
                         In this mode, <item> is optional.
@@ -118,7 +118,7 @@ type CLI struct {
 
 	// General Options
 	Vault       string `name:"vault" help:"Name of the 1Password Vault."`
-	Account     string `name:"account" help:"1Password account email address."`
+	Account     string `name:"account" help:"1Password account URL."`
 	Overwrite   bool   `name:"overwrite" help:"Overwrite the existing 1Password item and the output file if they exist."`
 	Interactive bool   `name:"interactive" help:"Enable interactive mode for selecting the item, account, and vault."`
 
@@ -244,11 +244,11 @@ func Run() {
 		ctx.Fatalf("output format is not implemented")
 	}
 
-	if cli.Vault != "" {
-		ctx.Fatalf("vault is not implemented")
+	if cli.Vault == "" {
+		ctx.Fatalf("vault is required")
 	}
-	if cli.Account != "" {
-		ctx.Fatalf("account is not implemented")
+	if cli.Account == "" {
+		ctx.Fatalf("account is required")
 	}
 	if cli.Overwrite {
 		ctx.Fatalf("overwrite is not implemented")
@@ -264,6 +264,14 @@ func Run() {
 		ctx.Fatalf("not implemented")
 	case ActionMirror:
 		logger.Info("mirroring secrets")
-		task.RunMirror(logger, cli.Item, cli.EnvFile, cli.Output)
+		task := &task.MirrorTask{
+			Logger:              logger,
+			AccountName:         cli.Account,
+			VaultName:           cli.Vault,
+			ItemName:            cli.Item,
+			EnvFilePath:         cli.EnvFile,
+			EnvTemplateFilePath: cli.Output,
+		}
+		task.Run()
 	}
 }

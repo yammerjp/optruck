@@ -14,16 +14,12 @@ type Client struct {
 	ItemID              string
 	ItemName            string
 	logger              *slog.Logger
-	envTemplateFilePath string
-}
-
-func NewClient(logger *slog.Logger, envTemplateFilePath string) *Client {
-	return &Client{logger: logger, envTemplateFilePath: envTemplateFilePath}
+	EnvTemplateFilePath string
 }
 
 func (c *Client) Print(resp *op.ItemCreateResponse) {
 	// open
-	envTemplateFile, err := os.OpenFile(c.envTemplateFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	envTemplateFile, err := os.OpenFile(c.EnvTemplateFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("failed to open env template file: %v", err))
 		return
@@ -36,6 +32,9 @@ func (c *Client) Print(resp *op.ItemCreateResponse) {
 	fmt.Fprintf(envTemplateFile, "#   $ cat .env.1password | grep -v '^#' | op inject > .env\n")
 
 	for _, field := range resp.Fields {
+		if field.Purpose != "" {
+			continue
+		}
 		if field.Type == "CONCEALED" {
 			fmt.Fprintf(envTemplateFile, "%s={{op://%s/%s/%s}}\n", field.Label, c.VaultID, c.ItemID, field.ID)
 		} else {
