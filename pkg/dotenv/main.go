@@ -63,14 +63,6 @@ func (c *Client) Upload(accountName, vaultName, itemName string, envFilePath str
 	return c.uploadSecret(uploadableSecret)
 }
 
-func (c *Client) Mirror(accountName, vaultName, itemName string, envFilePath string, templateFilePath string) error {
-	resp, err := c.Upload(accountName, vaultName, itemName, envFilePath)
-	if err != nil {
-		return err
-	}
-	return c.writeEnvTemplateFile(templateFilePath, resp)
-}
-
 func (c *Client) buildUploadableSecret(accountName, vaultName, itemName, envFilePath string) (*uploadableSecret, error) {
 	envPairs, err := c.readEnvFile(envFilePath)
 	if err != nil {
@@ -91,42 +83,6 @@ func (c *Client) readEnvFile(filePath string) (map[string]string, error) {
 
 func (c *Client) uploadSecret(uploadableSecret *uploadableSecret) (*op.ItemCreateResponse, error) {
 	return c.opClient.CreateItem(uploadableSecret.AccountName, uploadableSecret.VaultName, uploadableSecret.ItemName, uploadableSecret.EnvPairs)
-}
-
-func (c *Client) writeEnvTemplateFile(filePath string, resp *op.ItemCreateResponse) error {
-	writer, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer writer.Close()
-
-	envTemplate := buildEnvTemplate(resp)
-	return envTemplate.write(writer)
-}
-
-func buildEnvTemplate(resp *op.ItemCreateResponse) *envTemplate {
-	envTemplate := &envTemplate{
-		VaultName: resp.Vault.Name,
-		VaultID:   resp.Vault.ID,
-		ItemName:  resp.Title,
-		ItemID:    resp.ID,
-	}
-
-	for _, field := range resp.Fields {
-		envTemplate.Fields = append(envTemplate.Fields, struct {
-			Label     string
-			ID        string
-			Value     string
-			Concealed bool
-		}{
-			Label:     field.Label,
-			ID:        field.ID,
-			Value:     field.Value,
-			Concealed: field.Type == "CONCEALED",
-		})
-	}
-
-	return envTemplate
 }
 
 // check file exists
