@@ -8,44 +8,6 @@ import (
 	"strings"
 )
 
-/*
-$ op item get xxxx --format=json
-{
-  "id": "xxxx",
-  "title": "first-item",
-  "version": 1,
-  "vault": {
-    "id": "vvvv",
-    "name": "optruck-development"
-  },
-  "category": "PASSWORD",
-  "created_at": "2025-01-20T23:29:41.160193+09:00",
-  "updated_at": "2025-01-20T23:29:41.160194+09:00",
-  "additional_information": "Mon Jan 20 23:29:41 JST 2025",
-  "fields": [
-    {
-      "id": "password",
-      "type": "CONCEALED",
-      "purpose": "PASSWORD",
-      "label": "password",
-      "value": "bar",
-      "reference": "op://optruck-development/first-item/password",
-      "password_details": {
-        "strength": "TERRIBLE",
-        "history": ["baz"]
-      }
-    },
-    {
-      "id": "notesPlain",
-      "type": "STRING",
-      "purpose": "NOTES",
-      "label": "notesPlain",
-      "reference": "op://optruck-development/first-item/notesPlain"
-    }
-  ]
-}
-*/
-
 var ErrMoreThanOneItemMatches = errors.New("more than one item matches")
 
 type GetItemResponse struct {
@@ -63,14 +25,7 @@ type GetItemResponse struct {
 }
 
 func (c *Client) GetItem(itemName string) (*GetItemResponse, error) {
-	cmdArgs := []string{"item", "get", itemName, "--format", "json"}
-	if c.AccountName != "" {
-		cmdArgs = append(cmdArgs, "--account", c.AccountName)
-	}
-	if c.VaultName != "" {
-		cmdArgs = append(cmdArgs, "--vault", c.VaultName)
-	}
-	cmd := c.exec.Command("op", cmdArgs...)
+	cmd := c.BuildItemCommand("get", itemName)
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)

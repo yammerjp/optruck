@@ -3,33 +3,37 @@ package output
 import (
 	"fmt"
 	"os"
+	"text/template"
 
 	"github.com/yammerjp/optruck/pkg/op"
 )
 
-func (c *Client) Write(resp *op.ItemCreateResponse, accountName string) error {
-	// open
-	envTemplateFile, err := os.OpenFile(c.EnvTemplateFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func (d *EnvTemplateDest) GetPath() string {
+	return d.Path
+}
+
+func (d *EnvTemplateDest) Write(resp *op.SecretResponse) error {
+	file, err := os.OpenFile(d.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open env template file: %v", err)
 	}
-	defer envTemplateFile.Close()
+	defer file.Close()
 
-	fmt.Fprintf(envTemplateFile, "#   - 1password vault: %s\n", resp.Vault.Name)
-	fmt.Fprintf(envTemplateFile, "#   - 1password account: %s\n", accountName)
-	fmt.Fprintf(envTemplateFile, "#   - 1password item: %s\n", resp.Title)
-	fmt.Fprintf(envTemplateFile, "# To restore, run the following command:\n")
-	fmt.Fprintf(envTemplateFile, "#   $ cat .env.1password | grep -v '^#' | op inject > .env\n")
+	tmpl, err := template.New("envtemplate").Parse(`
+#   - 1password vault: {{.VaultName}}
+{{if .AccountName}}
+#   - 1password account: {{.AccountName}}
+{{end}}
+# To restore, run the following command:
+#   $ cat .env.1password | grep -v '^#' | op inject > .env
 
-	for _, field := range resp.Fields {
-		if field.Purpose != "" {
-			continue
-		}
-		if field.Type == "CONCEALED" {
-			fmt.Fprintf(envTemplateFile, "%s={{op://%s/%s/%s}}\n", field.Label, resp.Vault.Name, resp.Title, field.ID)
-		} else {
-			fmt.Fprintf(envTemplateFile, "%s=%s\n", field.Label, field.Value)
-		}
+{{range .FieldLabels}}
+{{.Label}}={{"{{op://"}}{{ .VaultName }}/{{ .ItemName }}/{{ .Label }}{{"}}"}}
+{{end}}
+`)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %v", err)
 	}
 
+	return tmpl.Execute(file, resp)
 }

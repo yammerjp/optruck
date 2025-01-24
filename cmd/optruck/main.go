@@ -1,14 +1,15 @@
 package optruck
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/yammerjp/optruck/pkg/task"
+	"github.com/yammerjp/optruck/pkg/actions"
+	"github.com/yammerjp/optruck/pkg/datasources"
+	"github.com/yammerjp/optruck/pkg/op"
+	"github.com/yammerjp/optruck/pkg/output"
 )
 
 var version = "0.1.0"
@@ -57,7 +58,6 @@ General Options:
   --interactive         Enable interactive mode for selecting the item, account, and vault.
                         In this mode, <item> is optional.
   --log-level <level>   Set the log level (debug|info|warn|error). Defaults to "info".
-  --log-output <path>   Set the log output (stdout|stderr|<file path>). Defaults to "stderr".
   -h, --help            Show help for optruck.
   --version             Show the version of optruck.
 Examples:
@@ -128,15 +128,14 @@ type CLI struct {
 	LogOutput string `name:"log-output" help:"Set the log output (stdout|stderr|<file path>)." default:"stderr"`
 }
 
-func (cli CLI) validateItem() error {
+func (cli CLI) validateItem(ctx *kong.Context) {
 	if cli.Item == "" && !cli.Interactive {
-		return errors.New("<item> is required unless --interactive or --help or --version is used")
+		ctx.Fatalf("<item> is required unless --interactive or --help or --version is used")
 	}
 	if len(cli.Item) > 100 {
 		// Limiting to 100 characters for simplicity; no deeper meaning behind this choice.
-		return errors.New("item must be less than 100 characters")
+		ctx.Fatalf("item must be less than 100 characters")
 	}
-	return nil
 }
 
 type ActionEnum int
@@ -145,53 +144,29 @@ const (
 	ActionUpload ActionEnum = iota
 	ActionTemplate
 	ActionMirror
+	ActionUnknown
 )
 
-func (cli CLI) validateAction() (ActionEnum, error) {
-	if !cli.Upload && !cli.Template && !cli.Mirror {
-		// default to mirror
-		return ActionMirror, nil
-	}
+func (cli CLI) validateAction(ctx *kong.Context) ActionEnum {
 	if cli.Upload && !cli.Template && !cli.Mirror {
 		// upload
-		return ActionUpload, nil
+		return ActionUpload
 	}
 	if !cli.Upload && cli.Template && !cli.Mirror {
 		// template
-		return ActionTemplate, nil
+		return ActionTemplate
 	}
-	if cli.Mirror && !cli.Upload && !cli.Template {
-		// mirror
-		return ActionMirror, nil
+	if !cli.Upload && !cli.Template {
+		// default or specified --mirror
+		return ActionMirror
 	}
-	return 0, errors.New("Action must be one of upload, template, or mirror")
+	if !cli.Interactive {
+		ctx.Fatalf("action must be one of upload, template, or mirror")
+	}
+	return ActionUnknown
 }
 
-func Run() {
-	cli := CLI{}
-	ctx := kong.Parse(&cli,
-		kong.Name("optruck"),
-		kong.Description("A CLI tool for managing secrets and creating templates with 1Password."),
-		kong.UsageOnError(),
-		kong.Help(helpPrinter),
-	)
-
-	var logOutput io.Writer
-
-	switch cli.LogOutput {
-	case "stderr":
-		logOutput = os.Stderr
-	case "stdout":
-		logOutput = os.Stdout
-	default:
-		logFile, err := os.OpenFile(cli.LogOutput, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			ctx.Fatalf("failed to open log file: %s", err)
-		}
-		defer logFile.Close()
-		logOutput = logFile
-	}
-
+func (cli CLI) BuildLogger(ctx *kong.Context) *slog.Logger {
 	var logLevel slog.Level
 	switch cli.LogLevel {
 	case "debug":
@@ -205,7 +180,18 @@ func Run() {
 	default:
 		ctx.Fatalf("invalid log level: %s", cli.LogLevel)
 	}
-	logger := slog.New(slog.NewJSONHandler(logOutput, &slog.HandlerOptions{Level: logLevel}))
+	return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: logLevel}))
+}
+
+func Run() {
+	cli := CLI{}
+	ctx := kong.Parse(&cli,
+		kong.Name("optruck"),
+		kong.Description("A CLI tool for managing secrets and creating templates with 1Password."),
+		kong.UsageOnError(),
+		kong.Help(helpPrinter),
+	)
+	logger := cli.BuildLogger(ctx)
 
 	// Handle version flag
 	if cli.Version {
@@ -214,17 +200,59 @@ func Run() {
 		os.Exit(0)
 	}
 
-	if err := cli.validateItem(); err != nil {
-		logger.Debug("invalid item", "error", err)
-		ctx.Fatalf(err.Error())
+	if cli.Interactive {
+		ctx.Fatalf("interactive is not implemented")
 	}
 
-	action, err := cli.validateAction()
-	if err != nil {
-		logger.Error("invalid action", "error", err)
-		ctx.Fatalf(err.Error())
+	cli.validateItem(ctx)
+
+	action := cli.validateAction(ctx)
+	switch action {
+	case ActionUpload:
+		ctx.Fatalf("not implemented")
+	case ActionTemplate:
+		ctx.Fatalf("not implemented")
+	case ActionMirror:
+		logger.Info("mirroring secrets")
+		err := actions.Mirror(cli.BuildMirrorConfig(ctx, logger))
+		if err != nil {
+			ctx.Fatalf("failed to mirror secrets: %v", err)
+		}
+	default:
+		ctx.Fatalf("invalid action: %v", action)
+	}
+}
+
+func (cli CLI) BuildMirrorConfig(ctx *kong.Context, logger *slog.Logger) actions.MirrorConfig {
+	if cli.Overwrite {
+		ctx.Fatalf("overwrite is not implemented")
 	}
 
+	return actions.MirrorConfig{
+		Logger:     logger,
+		Target:     cli.BuildOpTarget(ctx),
+		DataSource: cli.BuildDataSource(ctx),
+		Dest:       cli.BuildDest(ctx),
+		Overwrite:  cli.Overwrite,
+	}
+}
+
+func (cli CLI) BuildOpTarget(ctx *kong.Context) op.Target {
+	if cli.Vault == "" {
+		ctx.Fatalf("vault is required")
+	}
+	if cli.Account == "" {
+		ctx.Fatalf("account is required")
+	}
+
+	return op.Target{
+		AccountName: cli.Account,
+		VaultName:   cli.Vault,
+		ItemName:    cli.Item,
+	}
+}
+
+func (cli CLI) BuildDataSource(ctx *kong.Context) datasources.Source {
 	if cli.K8sSecret != "" {
 		ctx.Fatalf("k8s data source is not implemented")
 	}
@@ -237,6 +265,11 @@ func Run() {
 	if cli.EnvFile != ".env" {
 		ctx.Fatalf("env file is not implemented")
 	}
+
+	return datasources.NewSource(cli.EnvFile, datasources.EnvFile)
+}
+
+func (cli CLI) BuildDest(ctx *kong.Context) output.Dest {
 	if cli.Output != ".env.1password" {
 		ctx.Fatalf("output is not implemented")
 	}
@@ -244,34 +277,5 @@ func Run() {
 		ctx.Fatalf("output format is not implemented")
 	}
 
-	if cli.Vault == "" {
-		ctx.Fatalf("vault is required")
-	}
-	if cli.Account == "" {
-		ctx.Fatalf("account is required")
-	}
-	if cli.Overwrite {
-		ctx.Fatalf("overwrite is not implemented")
-	}
-	if cli.Interactive {
-		ctx.Fatalf("interactive is not implemented")
-	}
-
-	switch action {
-	case ActionUpload:
-		ctx.Fatalf("not implemented")
-	case ActionTemplate:
-		ctx.Fatalf("not implemented")
-	case ActionMirror:
-		logger.Info("mirroring secrets")
-		task := &task.MirrorTask{
-			Logger:              logger,
-			AccountName:         cli.Account,
-			VaultName:           cli.Vault,
-			ItemName:            cli.Item,
-			EnvFilePath:         cli.EnvFile,
-			EnvTemplateFilePath: cli.Output,
-		}
-		task.Run()
-	}
+	return output.NewDest(cli.Output, output.EnvFile)
 }

@@ -2,7 +2,7 @@ package actions
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/yammerjp/optruck/pkg/datasources"
 	"github.com/yammerjp/optruck/pkg/op"
@@ -11,40 +11,40 @@ import (
 
 // MirrorConfig は、mirror アクションに必要な設定を表します
 type MirrorConfig struct {
-	ItemName     string             // 1Passwordのアイテム名
-	Vault        string             // 1PasswordのVault名
-	DataSource   datasources.Source // データソース（.envファイルやKubernetes Secretなど）
-	OutputPath   string             // 出力ファイルのパス
-	OutputFormat string             // 出力フォーマット ("env" または "k8s")
-	Overwrite    bool               // 上書きオプション
+	Logger     *slog.Logger
+	Target     op.Target
+	DataSource datasources.Source // データソース（.envファイルやKubernetes Secretなど）
+	Dest       output.Dest        // 出力先
+	Overwrite  bool               // 上書きオプション
+}
+
+func (c *MirrorConfig) BuildOpClient() *op.Client {
+	return op.NewClient(c.Target)
 }
 
 // Mirror は、シークレットをアップロードしてテンプレートを生成するアクションを実行します
 func Mirror(config MirrorConfig) error {
-	log.Printf("Starting mirror action for item: %s", config.ItemName)
+	config.Logger.Info("Starting mirror action for item", "item", config.Target.ItemName)
 
 	// データソースからシークレットを取得
 	secrets, err := config.DataSource.FetchSecrets()
 	if err != nil {
 		return fmt.Errorf("failed to fetch secrets from data source: %w", err)
 	}
-	log.Printf("Fetched %d secrets from data source", len(secrets))
+	config.Logger.Info("Fetched secrets from data source", "count", len(secrets))
 
-	// 1Passwordにシークレットをアップロード
-	opClient := op.NewClient("", config.Vault) // 必要に応じてアカウント情報を渡す
-	resp, err := opClient.CreateItem(config.ItemName, secrets)
+	secretsResp, err := (*config.BuildOpClient()).CreateItem(secrets)
 	if err != nil {
 		return fmt.Errorf("failed to upload secrets to 1Password: %w", err)
 	}
-	log.Println("Uploaded secrets to 1Password successfully")
+	config.Logger.Info("Uploaded secrets to 1Password successfully")
 
-	outputClient := output.NewClient(config.OutputFormat, config.OutputPath)
-	err = outputClient.Write(resp, config.ItemName)
+	err = config.Dest.Write(secretsResp)
 	if err != nil {
 		return fmt.Errorf("failed to write output template: %w", err)
 	}
-	log.Printf("Template written to %s successfully", config.OutputPath)
+	config.Logger.Info("Template written to %s successfully", "path", config.Dest.GetPath())
 
-	log.Println("Mirror action completed successfully")
+	config.Logger.Info("Mirror action completed successfully")
 	return nil
 }

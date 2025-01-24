@@ -1,17 +1,28 @@
 package output
 
-type Client struct {
-	Format              Format
-	EnvTemplateFilePath string
-}
+import "github.com/yammerjp/optruck/pkg/op"
 
 type Format string
 
 const (
-	FormatEnvTemplate   Format = "env"
-	FormatK8sSecretYaml Format = "k8s-secret"
+	EnvFile   Format = "env"
+	K8sSecret Format = "k8s"
 )
 
-func NewClient(format string, envTemplateFilePath string) *Client {
-	return &Client{Format: Format(format), EnvTemplateFilePath: envTemplateFilePath}
+type Dest interface {
+	Write(resp *op.SecretResponse) error
+	GetPath() string
+}
+
+type EnvTemplateDest struct {
+	Path string
+}
+
+func NewDest(path string, format Format) Dest {
+	if format == EnvFile {
+		return &EnvTemplateDest{Path: path}
+	} else if format == K8sSecret {
+		return &K8sSecretDest{Path: path}
+	}
+	return nil
 }

@@ -3,7 +3,6 @@ package op
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
@@ -48,9 +47,9 @@ type ItemCreateRequestField struct {
 	Value   string
 }
 
-func (c *Client) BuildCreateItemRequest(itemName string, envPairs map[string]string) (ItemCreateRequest, error) {
+func (c *Client) BuildCreateItemRequest(envPairs map[string]string) (ItemCreateRequest, error) {
 	ret := ItemCreateRequest{
-		Title:    itemName,
+		Title:    c.Target.ItemName,
 		Category: "LOGIN",
 	}
 
@@ -66,41 +65,32 @@ func (c *Client) BuildCreateItemRequest(itemName string, envPairs map[string]str
 	return ret, nil
 }
 
-/*
-{
-  "id": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "title": "first-item",
-  "version": 1,
-  "vault": {
-    "id": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "name": "optruck-development"
-  },
-  "category": "PASSWORD",
-  "created_at": "2025-01-20T14:00:27.841127+09:00",
-  "updated_at": "2025-01-20T14:00:27.841127+09:00",
-  "additional_information": "Mon Jan 20 14:00:27 JST 2025",
-  "fields": [
-    {
-      "id": "password",
-      "type": "CONCEALED",
-      "purpose": "PASSWORD",
-      "label": "password",
-      "value": "BAR",
-      "reference": "op://optruck-development/first-item/password",
-      "password_details": {
-        "strength": "TERRIBLE"
-      }
-    },
-    {
-      "id": "notesPlain",
-      "type": "STRING",
-      "purpose": "NOTES",
-      "label": "notesPlain",
-      "reference": "op://optruck-development/first-item/notesPlain"
-    }
-  ]
+type SecretResponse struct {
+	AccountName string
+	VaultName   string
+	VaultID     string
+	ItemName    string
+	ItemID      string
+	FieldLabels []string
 }
-*/
+
+func (c *Client) GetSecrets(resp *ItemCreateResponse) (*SecretResponse, error) {
+	ret := SecretResponse{
+		AccountName: c.Target.AccountName,
+		VaultName:   c.Target.VaultName,
+		VaultID:     resp.Vault.ID,
+		ItemName:    resp.Title,
+		ItemID:      resp.ID,
+	}
+
+	for _, field := range resp.Fields {
+		if field.Purpose == "" {
+			ret.FieldLabels = append(ret.FieldLabels, field.Label)
+		}
+	}
+
+	return &ret, nil
+}
 
 type ItemCreateResponse struct {
 	ID      string `json:"id"`
@@ -129,12 +119,16 @@ type ItemCreateResponseField struct {
 	} `json:"password_details"`
 }
 
-func (c *Client) CreateItem(itemName string, envPairs map[string]string) (*ItemCreateResponse, error) {
-	req, err := c.BuildCreateItemRequest(itemName, envPairs)
+func (c *Client) CreateItem(envPairs map[string]string) (*SecretResponse, error) {
+	req, err := c.BuildCreateItemRequest(envPairs)
 	if err != nil {
 		return nil, err
 	}
-	return c.CreateItemByRequest(req)
+	resp, err := c.CreateItemByRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	return c.GetSecrets(resp)
 }
 
 func (c *Client) CreateItemByRequest(req ItemCreateRequest) (*ItemCreateResponse, error) {
@@ -143,24 +137,13 @@ func (c *Client) CreateItemByRequest(req ItemCreateRequest) (*ItemCreateResponse
 		return nil, err
 	}
 
-	cmdArgs := []string{"item", "create", "--format", "json"}
-
-	if c.AccountName != "" {
-		cmdArgs = append(cmdArgs, "--account", c.AccountName)
-	}
-	if c.VaultName != "" {
-		cmdArgs = append(cmdArgs, "--vault", c.VaultName)
-	}
-
-	cmd := c.exec.Command("op", cmdArgs...)
+	cmd := c.BuildItemCommand("create")
 	cmd.SetStdin(bytes.NewBuffer(reqStr))
 	var stdout bytes.Buffer
-	var stderr bytes.Buffer
 	cmd.SetStdout(&stdout)
-	cmd.SetStderr(&stderr)
+	cmd.SetStderr(os.Stderr)
 
 	err = cmd.Run()
-	os.Stderr.Write(stderr.Bytes())
 	if err != nil {
 		return nil, err
 	}
@@ -171,21 +154,4 @@ func (c *Client) CreateItemByRequest(req ItemCreateRequest) (*ItemCreateResponse
 	}
 
 	return &resp, nil
-}
-
-func (r *ItemCreateResponse) GenerateTemplate() (map[string]string, error) {
-	ret := make(map[string]string)
-
-	for _, field := range r.Fields {
-		if field.Purpose != "" {
-			continue
-		}
-		if field.Type == "CONCEALED" {
-			ret[field.Label] = fmt.Sprintf("{{op://%s/%s/%s}}", r.Vault.Name, r.Title, field.ID)
-		} else {
-			ret[field.Label] = field.Value
-		}
-	}
-
-	return ret, nil
 }

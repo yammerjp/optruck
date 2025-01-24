@@ -4,16 +4,30 @@ import (
 	"k8s.io/utils/exec"
 )
 
-type Client struct {
-	exec        exec.Interface
+type Target struct {
 	AccountName string
 	VaultName   string
+	ItemName    string
 }
 
-func NewClient(accountName string, vaultName string) *Client {
+type Client struct {
+	exec exec.Interface
+	Target
+}
+
+func NewClient(target Target) *Client {
 	return &Client{
-		exec:        exec.New(),
-		AccountName: accountName,
-		VaultName:   vaultName,
+		exec:   exec.New(),
+		Target: target,
 	}
+}
+func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
+	if c.Target.AccountName != "" {
+		args = append(args, "--account", c.Target.AccountName)
+	}
+	if c.Target.VaultName != "" {
+		args = append(args, "--vault", c.Target.VaultName)
+	}
+	args = append(args, "--format", "json", "item")
+	return c.exec.Command("op", args...)
 }

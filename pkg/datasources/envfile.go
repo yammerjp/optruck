@@ -22,3 +22,7 @@ type EnvFileSource struct {
 func (e *EnvFileSource) FetchSecrets() (map[string]string, error) {
 	return godotenv.Read(e.Path)
 }
+
+func NewSource(path string, format SourceType) Source {
+	return &EnvFileSource{Path: path}
+}
