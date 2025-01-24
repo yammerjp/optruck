@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/yammerjp/optruck/cmd"
+	"github.com/yammerjp/optruck/cmd/optruck"
 )
 
 func main() {
-	cmd.Run()
+	optruck.Run()
 }
