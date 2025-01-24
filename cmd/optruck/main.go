@@ -252,30 +252,38 @@ func (cli CLI) BuildOpTarget(ctx *kong.Context) op.Target {
 	}
 }
 
-func (cli CLI) BuildDataSource(ctx *kong.Context) datasources.Source {
+func (cli CLI) dataSourceType() datasources.SourceType {
 	if cli.K8sSecret != "" {
+		return datasources.KubernetesSecret
+	}
+	return datasources.EnvFile
+}
+
+func (cli CLI) BuildDataSource(ctx *kong.Context) datasources.Source {
+	sourceType := cli.dataSourceType()
+
+	if sourceType == datasources.KubernetesSecret {
 		ctx.Fatalf("k8s data source is not implemented")
 	}
-	if cli.K8sContext != "" {
-		ctx.Fatalf("k8s context is not implemented")
-	}
-	if cli.K8sNamespace != "default" {
-		ctx.Fatalf("k8s namespace is not implemented")
-	}
-	if cli.EnvFile != ".env" {
-		ctx.Fatalf("env file is not implemented")
-	}
 
-	return datasources.NewSource(cli.EnvFile, datasources.EnvFile)
+	return datasources.NewSource(cli.EnvFile, sourceType)
 }
 
 func (cli CLI) BuildDest(ctx *kong.Context) output.Dest {
-	if cli.Output != ".env.1password" {
-		ctx.Fatalf("output is not implemented")
-	}
-	if cli.OutputFormat != "env" {
-		ctx.Fatalf("output format is not implemented")
+	if cli.OutputFormat == "k8s" {
+		return &output.K8sSecretDest{
+			Path:       cli.Output,
+			Namespace:  cli.K8sNamespace,
+			SecretName: cli.K8sSecret,
+		}
 	}
 
-	return output.NewDest(cli.Output, output.EnvFile)
+	if cli.OutputFormat == "env" || cli.OutputFormat == "" {
+		return &output.EnvTemplateDest{
+			Path: cli.Output,
+		}
+	}
+
+	ctx.Fatalf("invalid output format: %s", cli.OutputFormat)
+	return nil
 }

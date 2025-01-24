@@ -12,10 +12,7 @@ const (
 type Dest interface {
 	Write(resp *op.SecretResponse) error
 	GetPath() string
-}
-
-type EnvTemplateDest struct {
-	Path string
+	GetBasename() string
 }
 
 func NewDest(path string, format Format) Dest {

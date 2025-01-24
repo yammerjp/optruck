@@ -3,6 +3,7 @@ package op
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -72,6 +73,19 @@ type SecretResponse struct {
 	ItemName    string
 	ItemID      string
 	FieldLabels []string
+}
+
+type FieldRef struct {
+	Label string
+	Ref   string
+}
+
+func (sr *SecretResponse) GetFieldRefs() []FieldRef {
+	ret := []FieldRef{}
+	for _, field := range sr.FieldLabels {
+		ret = append(ret, FieldRef{Label: field, Ref: fmt.Sprintf("{{op://%s/%s/%s}}", sr.VaultName, sr.ItemName, field)})
+	}
+	return ret
 }
 
 func (c *Client) GetSecrets(resp *ItemCreateResponse) (*SecretResponse, error) {
