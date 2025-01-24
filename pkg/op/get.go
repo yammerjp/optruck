@@ -62,8 +62,15 @@ type GetItemResponse struct {
 	} `json:"fields"`
 }
 
-func (c *Client) GetItem(accountName, vaultName, itemName string) (*GetItemResponse, error) {
-	cmd := c.exec.Command("op", "get", "item", itemName, "--vault", vaultName, "--account", accountName)
+func (c *Client) GetItem(itemName string) (*GetItemResponse, error) {
+	cmdArgs := []string{"item", "get", itemName, "--format", "json"}
+	if c.AccountName != "" {
+		cmdArgs = append(cmdArgs, "--account", c.AccountName)
+	}
+	if c.VaultName != "" {
+		cmdArgs = append(cmdArgs, "--vault", c.VaultName)
+	}
+	cmd := c.exec.Command("op", cmdArgs...)
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)

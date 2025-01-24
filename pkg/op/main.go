@@ -5,15 +5,15 @@ import (
 )
 
 type Client struct {
-	exec exec.Interface
+	exec        exec.Interface
+	AccountName string
+	VaultName   string
 }
 
-func NewClient(exec exec.Interface) *Client {
+func NewClient(accountName string, vaultName string) *Client {
 	return &Client{
-		exec: exec,
+		exec:        exec.New(),
+		AccountName: accountName,
+		VaultName:   vaultName,
 	}
-}
-
-func BuildClient() *Client {
-	return NewClient(exec.New())
 }

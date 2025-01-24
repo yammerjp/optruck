@@ -2,32 +2,22 @@ package output
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/yammerjp/optruck/pkg/op"
 )
 
-type Client struct {
-	AccountID           string
-	VaultID             string
-	ItemID              string
-	ItemName            string
-	logger              *slog.Logger
-	EnvTemplateFilePath string
-}
-
-func (c *Client) Print(resp *op.ItemCreateResponse) {
+func (c *Client) Write(resp *op.ItemCreateResponse, accountName string) error {
 	// open
 	envTemplateFile, err := os.OpenFile(c.EnvTemplateFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		c.logger.Error(fmt.Sprintf("failed to open env template file: %v", err))
-		return
+		return fmt.Errorf("failed to open env template file: %v", err)
 	}
 	defer envTemplateFile.Close()
 
-	// write
-	fmt.Fprintf(envTemplateFile, "#   - 1password item: %s\n", c.ItemName)
+	fmt.Fprintf(envTemplateFile, "#   - 1password vault: %s\n", resp.Vault.Name)
+	fmt.Fprintf(envTemplateFile, "#   - 1password account: %s\n", accountName)
+	fmt.Fprintf(envTemplateFile, "#   - 1password item: %s\n", resp.Title)
 	fmt.Fprintf(envTemplateFile, "# To restore, run the following command:\n")
 	fmt.Fprintf(envTemplateFile, "#   $ cat .env.1password | grep -v '^#' | op inject > .env\n")
 
@@ -36,7 +26,7 @@ func (c *Client) Print(resp *op.ItemCreateResponse) {
 			continue
 		}
 		if field.Type == "CONCEALED" {
-			fmt.Fprintf(envTemplateFile, "%s={{op://%s/%s/%s}}\n", field.Label, c.VaultID, c.ItemID, field.ID)
+			fmt.Fprintf(envTemplateFile, "%s={{op://%s/%s/%s}}\n", field.Label, resp.Vault.Name, resp.Title, field.ID)
 		} else {
 			fmt.Fprintf(envTemplateFile, "%s=%s\n", field.Label, field.Value)
 		}

@@ -3,6 +3,7 @@ package op
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -128,15 +129,15 @@ type ItemCreateResponseField struct {
 	} `json:"password_details"`
 }
 
-func (c *Client) CreateItem(accountName, vaultName, itemName string, envPairs map[string]string) (*ItemCreateResponse, error) {
+func (c *Client) CreateItem(itemName string, envPairs map[string]string) (*ItemCreateResponse, error) {
 	req, err := c.BuildCreateItemRequest(itemName, envPairs)
 	if err != nil {
 		return nil, err
 	}
-	return c.CreateItemByRequest(accountName, vaultName, req)
+	return c.CreateItemByRequest(req)
 }
 
-func (c *Client) CreateItemByRequest(accountName, vaultName string, req ItemCreateRequest) (*ItemCreateResponse, error) {
+func (c *Client) CreateItemByRequest(req ItemCreateRequest) (*ItemCreateResponse, error) {
 	reqStr, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -144,11 +145,11 @@ func (c *Client) CreateItemByRequest(accountName, vaultName string, req ItemCrea
 
 	cmdArgs := []string{"item", "create", "--format", "json"}
 
-	if accountName != "" {
-		cmdArgs = append(cmdArgs, "--account", accountName)
+	if c.AccountName != "" {
+		cmdArgs = append(cmdArgs, "--account", c.AccountName)
 	}
-	if vaultName != "" {
-		cmdArgs = append(cmdArgs, "--vault", vaultName)
+	if c.VaultName != "" {
+		cmdArgs = append(cmdArgs, "--vault", c.VaultName)
 	}
 
 	cmd := c.exec.Command("op", cmdArgs...)
@@ -170,4 +171,21 @@ func (c *Client) CreateItemByRequest(accountName, vaultName string, req ItemCrea
 	}
 
 	return &resp, nil
+}
+
+func (r *ItemCreateResponse) GenerateTemplate() (map[string]string, error) {
+	ret := make(map[string]string)
+
+	for _, field := range r.Fields {
+		if field.Purpose != "" {
+			continue
+		}
+		if field.Type == "CONCEALED" {
+			ret[field.Label] = fmt.Sprintf("{{op://%s/%s/%s}}", r.Vault.Name, r.Title, field.ID)
+		} else {
+			ret[field.Label] = field.Value
+		}
+	}
+
+	return ret, nil
 }
