@@ -9,9 +9,11 @@ import (
 )
 
 var ErrMoreThanOneItemMatches = errors.New("more than one item matches")
+var ErrItemNotFound = errors.New("item not found")
 
 type GetItemResponse struct {
 	ID    string `json:"id"`
+	Title string `json:"title"`
 	Vault struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
@@ -24,7 +26,7 @@ type GetItemResponse struct {
 	} `json:"fields"`
 }
 
-func (c *Client) GetItem(itemName string) (*GetItemResponse, error) {
+func (c *Client) GetItem(itemName string) (*SecretReference, error) {
 	cmd := c.BuildItemCommand("get", itemName)
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
@@ -34,8 +36,7 @@ func (c *Client) GetItem(itemName string) (*GetItemResponse, error) {
 	var resp GetItemResponse
 	if err := cmd.Run(); err != nil {
 		if strings.Contains(stderrBuffer.String(), " isn't an item. Specify the item with its UUID, name, or domain.") {
-			// not found
-			return nil, nil
+			return nil, ErrItemNotFound
 		}
 		if strings.Contains(stderrBuffer.String(), " More than one item matches ") {
 			return nil, ErrMoreThanOneItemMatches
@@ -47,14 +48,5 @@ func (c *Client) GetItem(itemName string) (*GetItemResponse, error) {
 		return nil, err
 	}
 
-	return &resp, nil
-}
-
-func (c *Client) CheckItemExists(itemName string) (bool, error) {
-	item, err := c.GetItem(itemName)
-	if err != nil {
-		return false, err
-	}
-
-	return item != nil, nil
+	return buildSecretReferenceByItemGetResponse(&resp, c.Target.Account), nil
 }

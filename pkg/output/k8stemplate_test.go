@@ -19,7 +19,7 @@ func TestK8sSecretDestWrite(t *testing.T) {
 	testCases := []struct {
 		name     string
 		dest     *K8sSecretDest
-		resp     *op.SecretResponse
+		resp     *op.SecretReference
 		expected string
 	}{
 		{
@@ -29,7 +29,7 @@ func TestK8sSecretDestWrite(t *testing.T) {
 				Namespace:  "default",
 				SecretName: "TestItem",
 			},
-			resp: &op.SecretResponse{
+			resp: &op.SecretReference{
 				VaultName:   "TestVault",
 				VaultID:     "vault-id",
 				Account:     "test.1password.com",
@@ -60,7 +60,7 @@ data:
 				Namespace:  "production",
 				SecretName: "APISecret",
 			},
-			resp: &op.SecretResponse{
+			resp: &op.SecretReference{
 				VaultName:   "TestVault",
 				VaultID:     "vault-id",
 				ItemName:    "APISecret",
@@ -86,7 +86,7 @@ data:
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Write the template
-			err := tc.dest.Write(tc.resp)
+			err := tc.dest.Write(tc.resp, false)
 			if err != nil {
 				t.Fatalf("Write() error = %v", err)
 			}

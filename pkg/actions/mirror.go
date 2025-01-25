@@ -33,13 +33,13 @@ func Mirror(config MirrorConfig) error {
 	}
 	config.Logger.Info("Fetched secrets from data source", "count", len(secrets))
 
-	secretsResp, err := (*config.BuildOpClient()).CreateItem(secrets)
+	secretsResp, err := (*config.BuildOpClient()).UploadItem(secrets, config.Overwrite)
 	if err != nil {
 		return fmt.Errorf("failed to upload secrets to 1Password: %w", err)
 	}
 	config.Logger.Info("Uploaded secrets to 1Password successfully")
 
-	err = config.Dest.Write(secretsResp)
+	err = config.Dest.Write(secretsResp, config.Overwrite)
 	if err != nil {
 		return fmt.Errorf("failed to write output template: %w", err)
 	}

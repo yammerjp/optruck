@@ -17,17 +17,17 @@ func TestEnvTemplateDestWrite(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	testCases := []struct {
-		name     string
-		dest     *EnvTemplateDest
-		resp     *op.SecretResponse
-		expected string
+		name            string
+		dest            *EnvTemplateDest
+		secretReference *op.SecretReference
+		expected        string
 	}{
 		{
 			name: "basic case",
 			dest: &EnvTemplateDest{
 				Path: filepath.Join(tmpDir, "test1.env"),
 			},
-			resp: &op.SecretResponse{
+			secretReference: &op.SecretReference{
 				Account:     "test.1password.com",
 				VaultName:   "TestVault",
 				VaultID:     "vault-id",
@@ -51,7 +51,7 @@ DB_PASS={{op://vault-id/item-id/DB_PASS}}
 			dest: &EnvTemplateDest{
 				Path: filepath.Join(tmpDir, "test2.env"),
 			},
-			resp: &op.SecretResponse{
+			secretReference: &op.SecretReference{
 				VaultName:   "TestVault",
 				VaultID:     "vault-id",
 				ItemName:    "TestItem",
@@ -72,7 +72,7 @@ API_KEY={{op://vault-id/item-id/API_KEY}}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Write the template
-			err := tc.dest.Write(tc.resp)
+			err := tc.dest.Write(tc.secretReference, false)
 			if err != nil {
 				t.Fatalf("Write() error = %v", err)
 			}

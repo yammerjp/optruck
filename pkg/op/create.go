@@ -3,7 +3,6 @@ package op
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
@@ -48,64 +47,6 @@ type ItemCreateRequestField struct {
 	Value   string
 }
 
-func (c *Client) BuildCreateItemRequest(envPairs map[string]string) (ItemCreateRequest, error) {
-	ret := ItemCreateRequest{
-		Title:    c.Target.ItemName,
-		Category: "LOGIN",
-	}
-
-	for k, v := range envPairs {
-		ret.Fields = append(ret.Fields, ItemCreateRequestField{
-			ID:    k,
-			Type:  "CONCEALED",
-			Label: k,
-			Value: v,
-		})
-	}
-
-	return ret, nil
-}
-
-type SecretResponse struct {
-	Account     string
-	VaultName   string
-	VaultID     string
-	ItemName    string
-	ItemID      string
-	FieldLabels []string
-}
-
-type FieldRef struct {
-	Label string
-	Ref   string
-}
-
-func (sr *SecretResponse) GetFieldRefs() []FieldRef {
-	ret := []FieldRef{}
-	for _, field := range sr.FieldLabels {
-		ret = append(ret, FieldRef{Label: field, Ref: fmt.Sprintf("{{op://%s/%s/%s}}", sr.VaultID, sr.ItemID, field)})
-	}
-	return ret
-}
-
-func (c *Client) GetSecrets(resp *ItemCreateResponse) (*SecretResponse, error) {
-	ret := SecretResponse{
-		Account:   c.Target.Account,
-		VaultName: resp.Vault.Name,
-		VaultID:   resp.Vault.ID,
-		ItemName:  resp.Title,
-		ItemID:    resp.ID,
-	}
-
-	for _, field := range resp.Fields {
-		if field.Purpose == "" {
-			ret.FieldLabels = append(ret.FieldLabels, field.Label)
-		}
-	}
-
-	return &ret, nil
-}
-
 type ItemCreateResponse struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
@@ -114,38 +55,38 @@ type ItemCreateResponse struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"vault"`
-	Category              string                    `json:"category"`
-	CreatedAt             string                    `json:"created_at"`
-	UpdatedAt             string                    `json:"updated_at"`
-	AdditionalInformation string                    `json:"additional_information"`
-	Fields                []ItemCreateResponseField `json:"fields"`
+	Category              string `json:"category"`
+	CreatedAt             string `json:"created_at"`
+	UpdatedAt             string `json:"updated_at"`
+	AdditionalInformation string `json:"additional_information"`
+	Fields                []struct {
+		ID              string `json:"id"`
+		Type            string `json:"type"`
+		Purpose         string `json:"purpose"`
+		Label           string `json:"label"`
+		Value           string `json:"value"`
+		Reference       string `json:"reference"`
+		PasswordDetails struct {
+			Strength string `json:"strength"`
+		} `json:"password_details"`
+	} `json:"fields"`
 }
 
-type ItemCreateResponseField struct {
-	ID              string `json:"id"`
-	Type            string `json:"type"`
-	Purpose         string `json:"purpose"`
-	Label           string `json:"label"`
-	Value           string `json:"value"`
-	Reference       string `json:"reference"`
-	PasswordDetails struct {
-		Strength string `json:"strength"`
-	} `json:"password_details"`
-}
-
-func (c *Client) CreateItem(envPairs map[string]string) (*SecretResponse, error) {
-	req, err := c.BuildCreateItemRequest(envPairs)
-	if err != nil {
-		return nil, err
+func (c *Client) CreateItem(envPairs map[string]string) (*SecretReference, error) {
+	req := ItemCreateRequest{
+		Title:    c.Target.ItemName,
+		Category: "LOGIN",
 	}
-	resp, err := c.CreateItemByRequest(req)
-	if err != nil {
-		return nil, err
-	}
-	return c.GetSecrets(resp)
-}
 
-func (c *Client) CreateItemByRequest(req ItemCreateRequest) (*ItemCreateResponse, error) {
+	for k, v := range envPairs {
+		req.Fields = append(req.Fields, ItemCreateRequestField{
+			ID:    k,
+			Type:  "CONCEALED",
+			Label: k,
+			Value: v,
+		})
+	}
+
 	reqStr, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -167,5 +108,5 @@ func (c *Client) CreateItemByRequest(req ItemCreateRequest) (*ItemCreateResponse
 		return nil, err
 	}
 
-	return &resp, nil
+	return buildSecretReferenceByItemCreateResponse(&resp, c.Target.Account), nil
 }

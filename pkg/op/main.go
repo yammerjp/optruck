@@ -2,6 +2,8 @@
 package op
 
 import (
+	"errors"
+
 	"k8s.io/utils/exec"
 )
 
@@ -31,4 +33,25 @@ func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
 	}
 	args = append(args, "--format", "json", "item")
 	return c.exec.Command("op", args...)
+}
+
+var ErrItemAlreadyExists = errors.New("item already exists")
+
+func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*SecretReference, error) {
+	_, err := c.GetItem(c.Target.ItemName)
+	if err != nil {
+		if err == ErrItemNotFound {
+			return c.CreateItem(envPairs)
+		}
+		if err == ErrMoreThanOneItemMatches {
+			return nil, ErrMoreThanOneItemMatches
+		}
+		return nil, err
+	}
+
+	if !overwrite {
+		return nil, ErrItemAlreadyExists
+	}
+	// update item
+	return nil, errors.New("not implemented")
 }
