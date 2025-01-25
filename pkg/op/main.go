@@ -27,6 +27,9 @@ func (target Target) BuildClient() *Client {
 	}
 }
 
+var ErrMoreThanOneItemFound = errors.New("more than one item found, please specify another item name")
+var ErrItemAlreadyExists = errors.New("item already exists, use --overwrite to update")
+
 func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
 	args = append([]string{"item"}, args...)
 
@@ -52,11 +55,11 @@ func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*Secret
 	if len(refs) == 1 {
 		slog.Debug("item found, updating existing item", "item", c.Target.ItemName)
 		if !overwrite {
-			return nil, errors.New("item already exists, use --overwrite to update")
+			return nil, ErrItemAlreadyExists
 		}
 		return c.EditItem(envPairs)
 	}
-	return nil, fmt.Errorf("cannot upload: %w", errors.New("more than one item matches"))
+	return nil, ErrMoreThanOneItemFound
 }
 
 type SecretReference struct {

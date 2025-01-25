@@ -55,7 +55,7 @@ General Options:
   --interactive         Enable interactive mode for selecting the item, account, and vault.
                         In this mode, <item> is optional.
   --log-level <level>   Set the log level (debug|info|warn|error). Defaults to "info".
-  --log-output <path>   Set the log output (<file path>). If not specified, output to stdout.
+  --log-output <path>   Set the log output (<file path>). If not specified, no logging is done.
   -h, --help            Show help for optruck.
   --version            Show the version of optruck.
 
@@ -123,7 +123,7 @@ type CLI struct {
 	// Misc
 	Version   bool   `name:"version" help:"Show the version of optruck."`
 	LogLevel  string `name:"log-level" help:"Set the log level (debug|info|warn|error)." enum:"debug,info,warn,error" default:"info"`
-	LogOutput string `name:"log-output" help:"Set the log output (<file path>). If not specified, output to stdout."`
+	LogOutput string `name:"log-output" help:"Set the log output (<file path>). If not specified, no logging is done."`
 }
 
 func (cli CLI) validateItem(ctx *kong.Context) {
@@ -169,7 +169,7 @@ func (cli CLI) BuildLogger(ctx *kong.Context) (*slog.Logger, func()) {
 	var cleanup func() = func() {}
 
 	if cli.LogOutput == "" {
-		logWriter = os.Stderr
+		logWriter = io.Discard
 	} else {
 		// Open log file
 		f, err := os.OpenFile(cli.LogOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -223,10 +223,12 @@ func Run() {
 
 	action, err := builder.Build(cli.Upload, cli.Template)
 	if err != nil {
-		ctx.Fatalf("failed to build action: %v", err)
+		logger.Error("failed to build action", "error", err)
+		ctx.Fatalf("%v", err)
 	}
 
 	if err := action.Run(); err != nil {
-		ctx.Fatalf("failed to run action: %v", err)
+		logger.Error("failed to run action", "error", err)
+		ctx.Fatalf("%v", err)
 	}
 }

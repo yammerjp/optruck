@@ -105,7 +105,7 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 - `--overwrite`: Overwrite existing 1Password item and output file
 - `--interactive`: Enable interactive mode for selecting item, account, and vault
 - `--log-level <level>`: Set log level (debug|info|warn|error)
-- `--log-output <path>`: Set the log output (<file path>). If not specified, output to stdout
+- `--log-output <path>`: Set the log output (<file path>). If not specified, no logging is done.
 - `-h, --help`: Show help
 - `--version`: Show version
 

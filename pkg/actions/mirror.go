@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/yammerjp/optruck/pkg/datasources"
@@ -25,19 +24,22 @@ func (config MirrorConfig) Run() error {
 	// データソースからシークレットを取得
 	secrets, err := config.DataSource.FetchSecrets()
 	if err != nil {
-		return fmt.Errorf("failed to fetch secrets from data source: %w", err)
+		config.Logger.Error("failed to fetch secrets from data source", "error", err)
+		return err
 	}
 	config.Logger.Debug("Fetched secrets from data source", "count", len(secrets))
 
 	secretsResp, err := config.Target.BuildClient().UploadItem(secrets, config.Overwrite)
 	if err != nil {
-		return fmt.Errorf("failed to upload secrets to 1Password: %w", err)
+		config.Logger.Error("failed to upload secrets to 1Password", "error", err)
+		return err
 	}
 	config.Logger.Debug("Uploaded secrets to 1Password successfully")
 
 	err = config.Dest.Write(secretsResp, config.Overwrite)
 	if err != nil {
-		return fmt.Errorf("failed to write output template: %w", err)
+		config.Logger.Error("failed to write output template", "error", err)
+		return err
 	}
 	config.Logger.Debug("Template written to %s successfully", "path", config.Dest.GetPath())
 
