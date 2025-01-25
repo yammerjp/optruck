@@ -7,10 +7,7 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/yammerjp/optruck/pkg/actions"
-	"github.com/yammerjp/optruck/pkg/datasources"
-	"github.com/yammerjp/optruck/pkg/op"
-	"github.com/yammerjp/optruck/pkg/output"
+	"github.com/yammerjp/optruck/pkg/config"
 )
 
 var version = "0.1.0"
@@ -126,7 +123,7 @@ type CLI struct {
 	// Misc
 	Version   bool   `name:"version" help:"Show the version of optruck."`
 	LogLevel  string `name:"log-level" help:"Set the log level (debug|info|warn|error)." enum:"debug,info,warn,error" default:"info"`
-	LogOutput string `name:"log-output" help:"Set the log output destination. Use 'stdout' or 'stderr' for standard streams, or provide a file path." default:"stderr"`
+	LogOutput string `name:"log-output" help:"Set the log output (<file path>). If not specified, output to stdout."`
 }
 
 func (cli CLI) validateItem(ctx *kong.Context) {
@@ -139,32 +136,19 @@ func (cli CLI) validateItem(ctx *kong.Context) {
 	}
 }
 
-type ActionEnum int
-
-const (
-	ActionUpload ActionEnum = iota
-	ActionTemplate
-	ActionMirror
-	ActionUnknown
-)
-
-func (cli CLI) validateAction(ctx *kong.Context) ActionEnum {
-	if cli.Upload && !cli.Template && !cli.Mirror {
-		// upload
-		return ActionUpload
+func (cli CLI) validateAction(ctx *kong.Context) {
+	if cli.Upload && cli.Template && cli.Mirror {
+		ctx.Fatalf("only one action can be specified")
 	}
-	if !cli.Upload && cli.Template && !cli.Mirror {
-		// template
-		return ActionTemplate
+	if cli.Upload && cli.Template {
+		ctx.Fatalf("cannot use both --upload and --template")
 	}
-	if !cli.Upload && !cli.Template {
-		// default or specified --mirror
-		return ActionMirror
+	if cli.Upload && cli.Mirror {
+		ctx.Fatalf("cannot use both --upload and --mirror")
 	}
-	if !cli.Interactive {
-		ctx.Fatalf("action must be one of upload, template, or mirror")
+	if cli.Template && cli.Mirror {
+		ctx.Fatalf("cannot use both --template and --mirror")
 	}
-	return ActionUnknown
 }
 
 func (cli CLI) BuildLogger(ctx *kong.Context) (*slog.Logger, func()) {
@@ -223,134 +207,26 @@ func Run() {
 	}
 
 	cli.validateItem(ctx)
+	cli.validateAction(ctx)
 
-	action := cli.validateAction(ctx)
-	switch action {
-	case ActionUpload:
-		err := cli.BuildUploadConfig(ctx, logger).Run()
-		if err != nil {
-			ctx.Fatalf("failed to upload secrets: %v", err)
-		}
-	case ActionTemplate:
-		err := cli.BuildTemplateConfig(ctx, logger).Run()
-		if err != nil {
-			ctx.Fatalf("failed to generate template: %v", err)
-		}
-	case ActionMirror:
-		err := cli.BuildMirrorConfig(ctx, logger).Run()
-		if err != nil {
-			ctx.Fatalf("failed to mirror secrets: %v", err)
-		}
-	default:
-		ctx.Fatalf("invalid action: %v", action)
-	}
-}
+	builder := config.NewConfigBuilder().
+		WithItem(cli.Item).
+		WithVault(cli.Vault).
+		WithAccount(cli.Account).
+		WithEnvFile(cli.EnvFile).
+		WithK8sSecret(cli.K8sSecret).
+		WithK8sNamespace(cli.K8sNamespace).
+		WithOutput(cli.Output).
+		WithOutputFormat(cli.OutputFormat).
+		WithOverwrite(cli.Overwrite).
+		WithLogger(logger)
 
-func (cli CLI) BuildUploadConfig(ctx *kong.Context, logger *slog.Logger) actions.UploadConfig {
-	return actions.UploadConfig{
-		Logger:     logger,
-		Target:     cli.BuildOpTarget(ctx),
-		DataSource: cli.BuildDataSource(ctx),
-		Overwrite:  cli.Overwrite,
-	}
-}
-
-func (cli CLI) BuildTemplateConfig(ctx *kong.Context, logger *slog.Logger) actions.TemplateConfig {
-	return actions.TemplateConfig{
-		Logger:    logger,
-		Target:    cli.BuildOpTarget(ctx),
-		Dest:      cli.BuildDest(ctx),
-		Overwrite: cli.Overwrite,
-	}
-}
-
-func (cli CLI) BuildMirrorConfig(ctx *kong.Context, logger *slog.Logger) actions.MirrorConfig {
-	return actions.MirrorConfig{
-		Logger:     logger,
-		Target:     cli.BuildOpTarget(ctx),
-		DataSource: cli.BuildDataSource(ctx),
-		Dest:       cli.BuildDest(ctx),
-		Overwrite:  cli.Overwrite,
-	}
-}
-
-func (cli CLI) BuildOpTarget(ctx *kong.Context) op.Target {
-	if cli.Vault == "" {
-		ctx.Fatalf("vault is required")
-	}
-	if cli.Account == "" {
-		ctx.Fatalf("account is required")
+	action, err := builder.Build(cli.Upload, cli.Template)
+	if err != nil {
+		ctx.Fatalf("failed to build action: %v", err)
 	}
 
-	return op.Target{
-		Account:  cli.Account,
-		Vault:    cli.Vault,
-		ItemName: cli.Item,
+	if err := action.Run(); err != nil {
+		ctx.Fatalf("failed to run action: %v", err)
 	}
-}
-
-func (cli CLI) BuildDataSource(ctx *kong.Context) datasources.Source {
-	if cli.K8sSecret != "" {
-		if cli.EnvFile != "" {
-			ctx.Fatalf("cannot use both --k8s-secret and --env-file")
-		}
-		if cli.K8sNamespace == "" {
-			ctx.Fatalf("k8s namespace is required")
-		}
-		return &datasources.K8sSecretSource{
-			Namespace:  cli.K8sNamespace,
-			SecretName: cli.K8sSecret,
-			Client:     datasources.NewK8sClient(),
-		}
-	}
-
-	if cli.EnvFile == "" {
-		ctx.Fatalf("env file is required")
-	}
-	if cli.K8sSecret != "" {
-		ctx.Fatalf("cannot use both --env-file and --k8s-secret")
-	}
-
-	return &datasources.EnvFileSource{Path: cli.EnvFile}
-}
-
-func (cli CLI) BuildDest(ctx *kong.Context) output.Dest {
-	if cli.OutputFormat == "k8s" {
-		if cli.K8sSecret == "" {
-			ctx.Fatalf("k8s secret is required")
-		}
-		if cli.K8sNamespace == "" {
-			ctx.Fatalf("k8s namespace is required")
-		}
-		return &output.K8sSecretTemplateDest{
-			Path:       cli.Output,
-			Namespace:  cli.K8sNamespace,
-			SecretName: cli.K8sSecret,
-		}
-	}
-
-	if cli.OutputFormat == "env" {
-		return &output.EnvTemplateDest{
-			Path: cli.Output,
-		}
-	}
-
-	if cli.EnvFile != "" {
-		return &output.EnvTemplateDest{
-			Path: cli.Output,
-		}
-	}
-	if cli.K8sSecret != "" {
-		if cli.K8sNamespace == "" {
-			ctx.Fatalf("k8s namespace is required")
-		}
-		return &output.K8sSecretTemplateDest{
-			Path:       cli.Output,
-			Namespace:  cli.K8sNamespace,
-			SecretName: cli.K8sSecret,
-		}
-	}
-
-	ctx.Fatalf("invalid output format: %s", cli.OutputFormat)
-	return nil
 }

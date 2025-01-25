@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 )
 
@@ -20,12 +21,18 @@ func (c *Client) GetItem() (*SecretReference, error) {
 
 	var resp ItemResponse
 	if err := cmd.Run(); err != nil {
-		if strings.Contains(stderrBuffer.String(), " isn't an item. Specify the item with its UUID, name, or domain.") {
+		slog.Error("failed to get item", "error", err)
+		stderrStr := stderrBuffer.String()
+		slog.Error("stderr", "stderr", stderrStr)
+		if strings.Contains(stderrStr, " isn't an item") && !strings.Contains(stderrStr, " Specify the item with its UUID, name, or domain.") {
+			slog.Error("item not found")
 			return nil, ErrItemNotFound
 		}
 		if strings.Contains(stderrBuffer.String(), " More than one item matches ") {
+			slog.Error("more than one item matches")
 			return nil, ErrMoreThanOneItemMatches
 		}
+		slog.Error("failed to get item", "error", err)
 		return nil, fmt.Errorf("failed to get item: %v", err)
 	}
 

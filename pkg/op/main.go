@@ -4,6 +4,7 @@ package op
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"k8s.io/utils/exec"
 )
@@ -39,25 +40,23 @@ func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
 	return c.exec.Command("op", args...)
 }
 
-var ErrItemAlreadyExists = errors.New("item already exists")
-
 func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*SecretReference, error) {
-	_, err := c.GetItem()
+	refs, err := c.FilterItems(c.Target.ItemName)
 	if err != nil {
-		if err == ErrItemNotFound {
-			return c.CreateItem(envPairs)
-		}
-		if err == ErrMoreThanOneItemMatches {
-			return nil, ErrMoreThanOneItemMatches
-		}
-		return nil, err
+		return nil, fmt.Errorf("failed to filter items: %w", err)
 	}
-
-	if !overwrite {
-		return nil, ErrItemAlreadyExists
+	if len(refs) == 0 {
+		slog.Info("item not found, creating new item", "item", c.Target.ItemName)
+		return c.CreateItem(envPairs)
 	}
-
-	return c.EditItem(envPairs)
+	if len(refs) == 1 {
+		slog.Info("item found, updating existing item", "item", c.Target.ItemName)
+		if !overwrite {
+			return nil, errors.New("item already exists, use --overwrite to update")
+		}
+		return c.EditItem(envPairs)
+	}
+	return nil, fmt.Errorf("cannot upload: %w", errors.New("more than one item matches"))
 }
 
 type SecretReference struct {
