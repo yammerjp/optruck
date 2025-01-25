@@ -16,20 +16,20 @@ type TemplateConfig struct {
 }
 
 func (config TemplateConfig) Run() error {
-	config.Logger.Info("Starting template action for item", "item", config.Target.ItemName)
+	config.Logger.Debug("Starting template action for item", "item", config.Target.ItemName)
 
 	secretReference, err := config.Target.BuildClient().GetItem()
 	if err != nil {
 		return fmt.Errorf("failed to get secret reference: %w", err)
 	}
-	config.Logger.Info("Fetched secret reference", "secretReference", secretReference)
+	config.Logger.Debug("Fetched secret reference", "secretReference", secretReference)
 
-	config.Logger.Info("Starting template action for item", "item", config.Target.ItemName)
+	config.Logger.Debug("Starting template action for item", "item", config.Target.ItemName)
 	err = config.Dest.Write(secretReference, config.Overwrite)
 	if err != nil {
 		return fmt.Errorf("failed to write secret reference: %w", err)
 	}
-	config.Logger.Info("Template written to %s successfully", "path", config.Dest.GetPath())
+	config.Logger.Debug("Template written to %s successfully", "path", config.Dest.GetPath())
 
 	return nil
 }

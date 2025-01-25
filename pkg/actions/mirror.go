@@ -20,27 +20,27 @@ type MirrorConfig struct {
 
 // Mirror は、シークレットをアップロードしてテンプレートを生成するアクションを実行します
 func (config MirrorConfig) Run() error {
-	config.Logger.Info("Starting mirror action for item", "item", config.Target.ItemName)
+	config.Logger.Debug("Starting mirror action for item", "item", config.Target.ItemName)
 
 	// データソースからシークレットを取得
 	secrets, err := config.DataSource.FetchSecrets()
 	if err != nil {
 		return fmt.Errorf("failed to fetch secrets from data source: %w", err)
 	}
-	config.Logger.Info("Fetched secrets from data source", "count", len(secrets))
+	config.Logger.Debug("Fetched secrets from data source", "count", len(secrets))
 
 	secretsResp, err := config.Target.BuildClient().UploadItem(secrets, config.Overwrite)
 	if err != nil {
 		return fmt.Errorf("failed to upload secrets to 1Password: %w", err)
 	}
-	config.Logger.Info("Uploaded secrets to 1Password successfully")
+	config.Logger.Debug("Uploaded secrets to 1Password successfully")
 
 	err = config.Dest.Write(secretsResp, config.Overwrite)
 	if err != nil {
 		return fmt.Errorf("failed to write output template: %w", err)
 	}
-	config.Logger.Info("Template written to %s successfully", "path", config.Dest.GetPath())
+	config.Logger.Debug("Template written to %s successfully", "path", config.Dest.GetPath())
 
-	config.Logger.Info("Mirror action completed successfully")
+	config.Logger.Debug("Mirror action completed successfully")
 	return nil
 }

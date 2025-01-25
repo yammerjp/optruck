@@ -46,11 +46,11 @@ func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*Secret
 		return nil, fmt.Errorf("failed to filter items: %w", err)
 	}
 	if len(refs) == 0 {
-		slog.Info("item not found, creating new item", "item", c.Target.ItemName)
+		slog.Debug("item not found, creating new item", "item", c.Target.ItemName)
 		return c.CreateItem(envPairs)
 	}
 	if len(refs) == 1 {
-		slog.Info("item found, updating existing item", "item", c.Target.ItemName)
+		slog.Debug("item found, updating existing item", "item", c.Target.ItemName)
 		if !overwrite {
 			return nil, errors.New("item already exists, use --overwrite to update")
 		}
