@@ -25,13 +25,15 @@ func NewClient(target Target) *Client {
 	}
 }
 func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
+	args = append([]string{"item"}, args...)
+
 	if c.Target.Account != "" {
 		args = append(args, "--account", c.Target.Account)
 	}
 	if c.Target.Vault != "" {
 		args = append(args, "--vault", c.Target.Vault)
 	}
-	args = append(args, "--format", "json", "item")
+	args = append(args, "--format", "json")
 	return c.exec.Command("op", args...)
 }
 
