@@ -227,12 +227,17 @@ func Run() {
 	action := cli.validateAction(ctx)
 	switch action {
 	case ActionUpload:
-		ctx.Fatalf("not implemented")
+		err := cli.BuildUploadConfig(ctx, logger).Run()
+		if err != nil {
+			ctx.Fatalf("failed to upload secrets: %v", err)
+		}
 	case ActionTemplate:
-		ctx.Fatalf("not implemented")
+		err := cli.BuildTemplateConfig(ctx, logger).Run()
+		if err != nil {
+			ctx.Fatalf("failed to generate template: %v", err)
+		}
 	case ActionMirror:
-		logger.Info("mirroring secrets")
-		err := actions.Mirror(cli.BuildMirrorConfig(ctx, logger))
+		err := cli.BuildMirrorConfig(ctx, logger).Run()
 		if err != nil {
 			ctx.Fatalf("failed to mirror secrets: %v", err)
 		}
@@ -241,11 +246,25 @@ func Run() {
 	}
 }
 
-func (cli CLI) BuildMirrorConfig(ctx *kong.Context, logger *slog.Logger) actions.MirrorConfig {
-	if cli.Overwrite {
-		ctx.Fatalf("overwrite is not implemented")
+func (cli CLI) BuildUploadConfig(ctx *kong.Context, logger *slog.Logger) actions.UploadConfig {
+	return actions.UploadConfig{
+		Logger:     logger,
+		Target:     cli.BuildOpTarget(ctx),
+		DataSource: cli.BuildDataSource(ctx),
+		Overwrite:  cli.Overwrite,
 	}
+}
 
+func (cli CLI) BuildTemplateConfig(ctx *kong.Context, logger *slog.Logger) actions.TemplateConfig {
+	return actions.TemplateConfig{
+		Logger:    logger,
+		Target:    cli.BuildOpTarget(ctx),
+		Dest:      cli.BuildDest(ctx),
+		Overwrite: cli.Overwrite,
+	}
+}
+
+func (cli CLI) BuildMirrorConfig(ctx *kong.Context, logger *slog.Logger) actions.MirrorConfig {
 	return actions.MirrorConfig{
 		Logger:     logger,
 		Target:     cli.BuildOpTarget(ctx),
@@ -303,7 +322,7 @@ func (cli CLI) BuildDest(ctx *kong.Context) output.Dest {
 		if cli.K8sNamespace == "" {
 			ctx.Fatalf("k8s namespace is required")
 		}
-		return &output.K8sSecretDest{
+		return &output.K8sSecretTemplateDest{
 			Path:       cli.Output,
 			Namespace:  cli.K8sNamespace,
 			SecretName: cli.K8sSecret,
@@ -325,7 +344,7 @@ func (cli CLI) BuildDest(ctx *kong.Context) output.Dest {
 		if cli.K8sNamespace == "" {
 			ctx.Fatalf("k8s namespace is required")
 		}
-		return &output.K8sSecretDest{
+		return &output.K8sSecretTemplateDest{
 			Path:       cli.Output,
 			Namespace:  cli.K8sNamespace,
 			SecretName: cli.K8sSecret,

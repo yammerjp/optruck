@@ -7,3 +7,6 @@ type Dest interface {
 	GetPath() string
 	GetBasename() string
 }
+
+var _ Dest = (*EnvTemplateDest)(nil)
+var _ Dest = (*K8sSecretTemplateDest)(nil)

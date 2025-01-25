@@ -26,8 +26,8 @@ type GetItemResponse struct {
 	} `json:"fields"`
 }
 
-func (c *Client) GetItem(itemName string) (*SecretReference, error) {
-	cmd := c.BuildItemCommand("get", itemName)
+func (c *Client) GetItem() (*SecretReference, error) {
+	cmd := c.BuildItemCommand("get", c.Target.ItemName)
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)
@@ -48,5 +48,18 @@ func (c *Client) GetItem(itemName string) (*SecretReference, error) {
 		return nil, err
 	}
 
-	return buildSecretReferenceByItemGetResponse(&resp, c.Target.Account), nil
+	fieldLabels := []string{}
+	for _, field := range resp.Fields {
+		if field.Purpose == "" {
+			fieldLabels = append(fieldLabels, field.Label)
+		}
+	}
+	return &SecretReference{
+		Account:     c.Target.Account,
+		VaultName:   resp.Vault.Name,
+		VaultID:     resp.Vault.ID,
+		ItemName:    resp.Title,
+		ItemID:      resp.ID,
+		FieldLabels: fieldLabels,
+	}, nil
 }

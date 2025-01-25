@@ -186,7 +186,7 @@ func TestGetItem(t *testing.T) {
 				},
 			}
 
-			got, err := client.GetItem(tt.itemName)
+			got, err := client.GetItem()
 			if err != tt.wantErr {
 				t.Errorf("GetItem() error = %v, wantErr %v", err, tt.wantErr)
 				return

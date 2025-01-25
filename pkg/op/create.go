@@ -81,5 +81,18 @@ func (c *Client) CreateItem(envPairs map[string]string) (*SecretReference, error
 		return nil, err
 	}
 
-	return buildSecretReferenceByItemCreateResponse(&resp, c.Target.Account), nil
+	fieldLabels := []string{}
+	for _, field := range resp.Fields {
+		if field.Purpose == "" {
+			fieldLabels = append(fieldLabels, field.Label)
+		}
+	}
+	return &SecretReference{
+		Account:     c.Target.Account,
+		VaultName:   resp.Vault.Name,
+		VaultID:     resp.Vault.ID,
+		ItemName:    resp.Title,
+		ItemID:      resp.ID,
+		FieldLabels: fieldLabels,
+	}, nil
 }

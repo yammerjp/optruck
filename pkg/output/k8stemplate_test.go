@@ -8,7 +8,7 @@ import (
 	"github.com/yammerjp/optruck/pkg/op"
 )
 
-func TestK8sSecretDestWrite(t *testing.T) {
+func TestK8sSecretTemplateDestWrite(t *testing.T) {
 	// Create a temporary directory for test files
 	tmpDir, err := os.MkdirTemp("", "optruck-test-*")
 	if err != nil {
@@ -18,7 +18,7 @@ func TestK8sSecretDestWrite(t *testing.T) {
 
 	testCases := []struct {
 		name         string
-		dest         *K8sSecretDest
+		dest         *K8sSecretTemplateDest
 		resp         *op.SecretReference
 		expected     string
 		overwrite    bool
@@ -26,7 +26,7 @@ func TestK8sSecretDestWrite(t *testing.T) {
 	}{
 		{
 			name: "basic case",
-			dest: &K8sSecretDest{
+			dest: &K8sSecretTemplateDest{
 				Path:       filepath.Join(tmpDir, "test1.yaml"),
 				Namespace:  "default",
 				SecretName: "TestItem",
@@ -59,7 +59,7 @@ data:
 		},
 		{
 			name: "without account name",
-			dest: &K8sSecretDest{
+			dest: &K8sSecretTemplateDest{
 				Path:       filepath.Join(tmpDir, "test2.yaml"),
 				Namespace:  "production",
 				SecretName: "APISecret",
@@ -89,7 +89,7 @@ data:
 		},
 		{
 			name: "overwrite existing file",
-			dest: &K8sSecretDest{
+			dest: &K8sSecretTemplateDest{
 				Path:       filepath.Join(tmpDir, "test3.yaml"),
 				Namespace:  "default",
 				SecretName: "TestItem",
@@ -121,7 +121,7 @@ data:
 		},
 		{
 			name: "error when file exists and overwrite is false",
-			dest: &K8sSecretDest{
+			dest: &K8sSecretTemplateDest{
 				Path:       filepath.Join(tmpDir, "test4.yaml"),
 				Namespace:  "default",
 				SecretName: "TestItem",

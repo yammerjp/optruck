@@ -9,8 +9,7 @@ import (
 	"github.com/yammerjp/optruck/pkg/output"
 )
 
-// MirrorConfig は、mirror アクションに必要な設定を表します
-type MirrorConfig struct {
+type UploadConfig struct {
 	Logger     *slog.Logger
 	Target     op.Target
 	DataSource datasources.Source // データソース（.envファイルやKubernetes Secretなど）
@@ -18,29 +17,19 @@ type MirrorConfig struct {
 	Overwrite  bool               // 上書きオプション
 }
 
-// Mirror は、シークレットをアップロードしてテンプレートを生成するアクションを実行します
-func (config MirrorConfig) Run() error {
-	config.Logger.Info("Starting mirror action for item", "item", config.Target.ItemName)
+func (config UploadConfig) Run() error {
+	config.Logger.Info("Starting upload action for item", "item", config.Target.ItemName)
 
-	// データソースからシークレットを取得
 	secrets, err := config.DataSource.FetchSecrets()
 	if err != nil {
 		return fmt.Errorf("failed to fetch secrets from data source: %w", err)
 	}
 	config.Logger.Info("Fetched secrets from data source", "count", len(secrets))
 
-	secretsResp, err := config.Target.BuildClient().UploadItem(secrets, config.Overwrite)
+	_, err = config.Target.BuildClient().UploadItem(secrets, config.Overwrite)
 	if err != nil {
 		return fmt.Errorf("failed to upload secrets to 1Password: %w", err)
 	}
 	config.Logger.Info("Uploaded secrets to 1Password successfully")
-
-	err = config.Dest.Write(secretsResp, config.Overwrite)
-	if err != nil {
-		return fmt.Errorf("failed to write output template: %w", err)
-	}
-	config.Logger.Info("Template written to %s successfully", "path", config.Dest.GetPath())
-
-	config.Logger.Info("Mirror action completed successfully")
 	return nil
 }

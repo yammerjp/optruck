@@ -3,6 +3,7 @@ package op
 
 import (
 	"errors"
+	"fmt"
 
 	"k8s.io/utils/exec"
 )
@@ -18,12 +19,13 @@ type Client struct {
 	Target
 }
 
-func NewClient(target Target) *Client {
+func (target Target) BuildClient() *Client {
 	return &Client{
 		exec:   exec.New(),
 		Target: target,
 	}
 }
+
 func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
 	args = append([]string{"item"}, args...)
 
@@ -40,7 +42,7 @@ func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
 var ErrItemAlreadyExists = errors.New("item already exists")
 
 func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*SecretReference, error) {
-	_, err := c.GetItem(c.Target.ItemName)
+	_, err := c.GetItem()
 	if err != nil {
 		if err == ErrItemNotFound {
 			return c.CreateItem(envPairs)
@@ -56,4 +58,26 @@ func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*Secret
 	}
 	// update item
 	return nil, errors.New("not implemented")
+}
+
+type SecretReference struct {
+	Account     string
+	VaultName   string
+	VaultID     string
+	ItemName    string
+	ItemID      string
+	FieldLabels []string
+}
+
+type FieldRef struct {
+	Label string
+	Ref   string
+}
+
+func (sr *SecretReference) GetFieldRefs() []FieldRef {
+	ret := []FieldRef{}
+	for _, field := range sr.FieldLabels {
+		ret = append(ret, FieldRef{Label: field, Ref: fmt.Sprintf("{{op://%s/%s/%s}}", sr.VaultID, sr.ItemID, field)})
+	}
+	return ret
 }
