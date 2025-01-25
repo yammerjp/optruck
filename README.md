@@ -117,4 +117,4 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 
 ## License
 
-MIT
+[MIT](LICENSE)
