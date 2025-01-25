@@ -40,7 +40,6 @@ Data Source Options (default: --env-file):
   --env-file <path>     Path to the .env file containing secrets (default: ".env").
   --k8s-secret <name>   Name of the Kubernetes Secret to fetch secrets from.
                         When this option is used, you can also specify:
-                        - --k8s-context <name>: Kubernetes context name. Defaults to the current context as configured in kubectl.
                         - --k8s-namespace <name>: Kubernetes namespace (default: "default").
 
 Output Options:
@@ -73,9 +72,9 @@ Examples:
   $ optruck MySecrets --mirror --k8s-secret my-secret --output kube-secret.yaml --output-format k8s
   # -> Fetches secrets from the specified Kubernetes Secret, uploads them to 1Password, and generates a Kubernetes Secret manifest.
 
-  # Specify Kubernetes context and namespace with Kubernetes Secret
-  $ optruck MySecrets --k8s-secret my-secret --k8s-context prod --k8s-namespace my-namespace
-  # -> Fetches secrets from the Kubernetes Secret in the specified context and namespace, then uploads them to 1Password.
+  # Specify Kubernetes namespace with Kubernetes Secret
+  $ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
+  # -> Fetches secrets from the Kubernetes Secret in the specified namespace, then uploads them to 1Password.
 
   # Generate a restoration template only, without uploading secrets
   $ optruck MySecrets --template --output /path/to/template.env --output-format env
@@ -109,7 +108,6 @@ type CLI struct {
 	// Data Source Options
 	EnvFile      string `name:"env-file" help:"Path to the .env file containing secrets." default:".env"`
 	K8sSecret    string `name:"k8s-secret" help:"Name of the Kubernetes Secret to fetch secrets from."`
-	K8sContext   string `name:"k8s-context" help:"Kubernetes context name. Defaults to the current context as configured in kubectl."`
 	K8sNamespace string `name:"k8s-namespace" help:"Kubernetes namespace." default:"default"`
 
 	// Output Options
