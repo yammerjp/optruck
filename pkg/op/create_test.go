@@ -2,6 +2,7 @@ package op
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
 	"k8s.io/utils/exec"
@@ -98,7 +99,7 @@ func TestCreateItem(t *testing.T) {
 				FieldLabels: []string{"FOO", "BAR"},
 			},
 			wantArgs:  []string{"item", "create", "--account", "test-account", "--vault", "test-vault-name", "--format", "json"},
-			wantStdin: `{"Title":"test-item","Category":"LOGIN","Fields":[{"ID":"FOO","Type":"CONCEALED","Purpose":"","Label":"FOO","Value":"bar"},{"ID":"BAR","Type":"CONCEALED","Purpose":"","Label":"BAR","Value":"baz"}]}`,
+			wantStdin: `{"Title":"test-item","Category":"LOGIN","Fields":[{"ID":"BAR","Type":"CONCEALED","Purpose":"","Label":"BAR","Value":"baz"},{"ID":"FOO","Type":"CONCEALED","Purpose":"","Label":"FOO","Value":"bar"}]}`,
 		},
 		{
 			name:     "without account and vault",
@@ -118,7 +119,7 @@ func TestCreateItem(t *testing.T) {
 				FieldLabels: []string{"FOO", "BAR"},
 			},
 			wantArgs:  []string{"item", "create", "--format", "json"},
-			wantStdin: `{"Title":"test-item","Category":"LOGIN","Fields":[{"ID":"FOO","Type":"CONCEALED","Purpose":"","Label":"FOO","Value":"bar"},{"ID":"BAR","Type":"CONCEALED","Purpose":"","Label":"BAR","Value":"baz"}]}`,
+			wantStdin: `{"Title":"test-item","Category":"LOGIN","Fields":[{"ID":"BAR","Type":"CONCEALED","Purpose":"","Label":"BAR","Value":"baz"},{"ID":"FOO","Type":"CONCEALED","Purpose":"","Label":"FOO","Value":"bar"}]}`,
 		},
 		{
 			name:     "verify exact json",
@@ -157,7 +158,22 @@ func TestCreateItem(t *testing.T) {
 						// Check stdin
 						if tt.wantStdin != "" {
 							gotJSON := fcmd.Stdin.(*bytes.Buffer).Bytes()
-							if !bytes.Equal(gotJSON, []byte(tt.wantStdin)) {
+							var got, want interface{}
+							if err := json.Unmarshal(gotJSON, &got); err != nil {
+								t.Errorf("failed to unmarshal got JSON: %v", err)
+							}
+							if err := json.Unmarshal([]byte(tt.wantStdin), &want); err != nil {
+								t.Errorf("failed to unmarshal want JSON: %v", err)
+							}
+							gotStr, err := json.Marshal(got)
+							if err != nil {
+								t.Errorf("failed to marshal got JSON: %v", err)
+							}
+							wantStr, err := json.Marshal(want)
+							if err != nil {
+								t.Errorf("failed to marshal want JSON: %v", err)
+							}
+							if !bytes.Equal(gotStr, wantStr) {
 								t.Errorf("stdin JSON = %s, want %s", string(gotJSON), tt.wantStdin)
 							}
 						}

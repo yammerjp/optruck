@@ -56,8 +56,8 @@ func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*Secret
 	if !overwrite {
 		return nil, ErrItemAlreadyExists
 	}
-	// update item
-	return nil, errors.New("not implemented")
+
+	return c.EditItem(envPairs)
 }
 
 type SecretReference struct {

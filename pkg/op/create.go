@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"sort"
 )
 
 type ItemCreateRequest struct {
@@ -20,7 +21,7 @@ type ItemCreateRequestField struct {
 	Value   string
 }
 
-type ItemCreateResponse struct {
+type ItemResponse struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Version int    `json:"version"`
@@ -45,18 +46,44 @@ type ItemCreateResponse struct {
 	} `json:"fields"`
 }
 
+func (c *Client) BuildSecretReference(resp ItemResponse) *SecretReference {
+	fieldLabels := []string{}
+	for _, field := range resp.Fields {
+		if field.Purpose == "" {
+			fieldLabels = append(fieldLabels, field.Label)
+		}
+	}
+	return &SecretReference{
+		Account:     c.Target.Account,
+		VaultName:   resp.Vault.Name,
+		VaultID:     resp.Vault.ID,
+		ItemName:    resp.Title,
+		ItemID:      resp.ID,
+		FieldLabels: fieldLabels,
+	}
+}
+
 func (c *Client) CreateItem(envPairs map[string]string) (*SecretReference, error) {
 	req := ItemCreateRequest{
 		Title:    c.Target.ItemName,
 		Category: "LOGIN",
+		Fields:   make([]ItemCreateRequestField, 0, len(envPairs)),
 	}
 
-	for k, v := range envPairs {
+	// Sort keys to ensure consistent order
+	keys := make([]string, 0, len(envPairs))
+	for k := range envPairs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// Add fields in sorted order
+	for _, k := range keys {
 		req.Fields = append(req.Fields, ItemCreateRequestField{
 			ID:    k,
 			Type:  "CONCEALED",
 			Label: k,
-			Value: v,
+			Value: envPairs[k],
 		})
 	}
 
@@ -76,23 +103,10 @@ func (c *Client) CreateItem(envPairs map[string]string) (*SecretReference, error
 		return nil, err
 	}
 
-	var resp ItemCreateResponse
+	var resp ItemResponse
 	if err := json.Unmarshal(stdout.Bytes(), &resp); err != nil {
 		return nil, err
 	}
 
-	fieldLabels := []string{}
-	for _, field := range resp.Fields {
-		if field.Purpose == "" {
-			fieldLabels = append(fieldLabels, field.Label)
-		}
-	}
-	return &SecretReference{
-		Account:     c.Target.Account,
-		VaultName:   resp.Vault.Name,
-		VaultID:     resp.Vault.ID,
-		ItemName:    resp.Title,
-		ItemID:      resp.ID,
-		FieldLabels: fieldLabels,
-	}, nil
+	return c.BuildSecretReference(resp), nil
 }
