@@ -272,7 +272,24 @@ func (cli CLI) BuildOpTarget(ctx *kong.Context) op.Target {
 
 func (cli CLI) BuildDataSource(ctx *kong.Context) datasources.Source {
 	if cli.K8sSecret != "" {
-		ctx.Fatalf("k8s data source is not implemented")
+		if cli.EnvFile != "" {
+			ctx.Fatalf("cannot use both --k8s-secret and --env-file")
+		}
+		if cli.K8sNamespace == "" {
+			ctx.Fatalf("k8s namespace is required")
+		}
+		return &datasources.K8sSecretSource{
+			Namespace:  cli.K8sNamespace,
+			SecretName: cli.K8sSecret,
+			Client:     datasources.NewK8sClient(),
+		}
+	}
+
+	if cli.EnvFile == "" {
+		ctx.Fatalf("env file is required")
+	}
+	if cli.K8sSecret != "" {
+		ctx.Fatalf("cannot use both --env-file and --k8s-secret")
 	}
 
 	return &datasources.EnvFileSource{Path: cli.EnvFile}
@@ -280,6 +297,12 @@ func (cli CLI) BuildDataSource(ctx *kong.Context) datasources.Source {
 
 func (cli CLI) BuildDest(ctx *kong.Context) output.Dest {
 	if cli.OutputFormat == "k8s" {
+		if cli.K8sSecret == "" {
+			ctx.Fatalf("k8s secret is required")
+		}
+		if cli.K8sNamespace == "" {
+			ctx.Fatalf("k8s namespace is required")
+		}
 		return &output.K8sSecretDest{
 			Path:       cli.Output,
 			Namespace:  cli.K8sNamespace,
@@ -287,9 +310,25 @@ func (cli CLI) BuildDest(ctx *kong.Context) output.Dest {
 		}
 	}
 
-	if cli.OutputFormat == "env" || cli.OutputFormat == "" {
+	if cli.OutputFormat == "env" {
 		return &output.EnvTemplateDest{
 			Path: cli.Output,
+		}
+	}
+
+	if cli.EnvFile != "" {
+		return &output.EnvTemplateDest{
+			Path: cli.Output,
+		}
+	}
+	if cli.K8sSecret != "" {
+		if cli.K8sNamespace == "" {
+			ctx.Fatalf("k8s namespace is required")
+		}
+		return &output.K8sSecretDest{
+			Path:       cli.Output,
+			Namespace:  cli.K8sNamespace,
+			SecretName: cli.K8sSecret,
 		}
 	}
 
