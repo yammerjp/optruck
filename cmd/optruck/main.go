@@ -270,21 +270,12 @@ func (cli CLI) BuildOpTarget(ctx *kong.Context) op.Target {
 	}
 }
 
-func (cli CLI) dataSourceType() datasources.SourceType {
-	if cli.K8sSecret != "" {
-		return datasources.KubernetesSecret
-	}
-	return datasources.EnvFile
-}
-
 func (cli CLI) BuildDataSource(ctx *kong.Context) datasources.Source {
-	sourceType := cli.dataSourceType()
-
-	if sourceType == datasources.KubernetesSecret {
+	if cli.K8sSecret != "" {
 		ctx.Fatalf("k8s data source is not implemented")
 	}
 
-	return datasources.NewSource(cli.EnvFile, sourceType)
+	return &datasources.EnvFileSource{Path: cli.EnvFile}
 }
 
 func (cli CLI) BuildDest(ctx *kong.Context) output.Dest {

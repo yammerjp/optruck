@@ -44,16 +44,3 @@ func TestEnvFileSource_FetchSecrets_FileNotFound(t *testing.T) {
 		t.Errorf("expected empty map, got %v", secrets)
 	}
 }
-
-func TestNewSource(t *testing.T) {
-	path := "/path/to/env"
-	source := NewSource(path, EnvFile)
-
-	envSource, ok := source.(*EnvFileSource)
-	if !ok {
-		t.Error("expected *EnvFileSource type")
-	}
-	if envSource.Path != path {
-		t.Errorf("expected path %s, got %s", path, envSource.Path)
-	}
-}
