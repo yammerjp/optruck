@@ -2,6 +2,7 @@ package optruck
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 
@@ -51,17 +52,19 @@ Output Options:
                         Defaults to "env" unless --k8s-* is used, in which case "k8s" is applied.
 
 General Options:
-  --vault <name>        Name of the 1Password Vault. If omitted, the default Vault is used.
-  --account <url>       1Password account URL. If omitted, the default account is used.
+  --vault <value>       1Password Vault (e.g., "Development" or "abcd1234efgh5678").
+  --account <value>     1Password account (e.g., "my.1password.com" or "my.1password.example.com").
   --overwrite           Overwrite the existing 1Password item and the output file if they exist.
   --interactive         Enable interactive mode for selecting the item, account, and vault.
                         In this mode, <item> is optional.
   --log-level <level>   Set the log level (debug|info|warn|error). Defaults to "info".
+  --log-output <path>   Set the log output (<file path>). If not specified, output to stdout.
   -h, --help            Show help for optruck.
-  --version             Show the version of optruck.
+  --version            Show the version of optruck.
+
 Examples:
   # Default: Mirror secrets from a .env file to 1Password and generate a template
-  $ optruck MySecrets
+  $ optruck MySecrets --vault MyVault --account my.1password.com
   # -> Uploads secrets from the .env file to 1Password and generates a restoration template.
 
   # Use a custom .env file for upload and template generation
@@ -115,15 +118,15 @@ type CLI struct {
 	OutputFormat string `name:"output-format" help:"Format of the output file (env|k8s)." enum:"env,k8s" default:"env"`
 
 	// General Options
-	Vault       string `name:"vault" help:"Name of the 1Password Vault."`
-	Account     string `name:"account" help:"1Password account URL."`
+	Vault       string `name:"vault" help:"1Password Vault (e.g., 'Development' or 'abcd1234efgh5678')."`
+	Account     string `name:"account" help:"1Password account (e.g., 'my.1password.com' or 'my.1password.example.com')."`
 	Overwrite   bool   `name:"overwrite" help:"Overwrite the existing 1Password item and the output file if they exist."`
 	Interactive bool   `name:"interactive" help:"Enable interactive mode for selecting the item, account, and vault."`
 
 	// Misc
 	Version   bool   `name:"version" help:"Show the version of optruck."`
 	LogLevel  string `name:"log-level" help:"Set the log level (debug|info|warn|error)." enum:"debug,info,warn,error" default:"info"`
-	LogOutput string `name:"log-output" help:"Set the log output (stdout|stderr|<file path>)." default:"stderr"`
+	LogOutput string `name:"log-output" help:"Set the log output destination. Use 'stdout' or 'stderr' for standard streams, or provide a file path." default:"stderr"`
 }
 
 func (cli CLI) validateItem(ctx *kong.Context) {
@@ -164,7 +167,7 @@ func (cli CLI) validateAction(ctx *kong.Context) ActionEnum {
 	return ActionUnknown
 }
 
-func (cli CLI) BuildLogger(ctx *kong.Context) *slog.Logger {
+func (cli CLI) BuildLogger(ctx *kong.Context) (*slog.Logger, func()) {
 	var logLevel slog.Level
 	switch cli.LogLevel {
 	case "debug":
@@ -178,7 +181,23 @@ func (cli CLI) BuildLogger(ctx *kong.Context) *slog.Logger {
 	default:
 		ctx.Fatalf("invalid log level: %s", cli.LogLevel)
 	}
-	return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: logLevel}))
+	var logWriter io.Writer
+	var cleanup func() = func() {}
+
+	if cli.LogOutput == "" {
+		logWriter = os.Stderr
+	} else {
+		// Open log file
+		f, err := os.OpenFile(cli.LogOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			ctx.Fatalf("failed to open log file: %v", err)
+		}
+		logWriter = f
+		cleanup = func() {
+			f.Close()
+		}
+	}
+	return slog.New(slog.NewJSONHandler(logWriter, &slog.HandlerOptions{Level: logLevel})), cleanup
 }
 
 func Run() {
@@ -189,7 +208,8 @@ func Run() {
 		kong.UsageOnError(),
 		kong.Help(helpPrinter),
 	)
-	logger := cli.BuildLogger(ctx)
+	logger, cleanup := cli.BuildLogger(ctx)
+	defer cleanup()
 
 	// Handle version flag
 	if cli.Version {
@@ -244,9 +264,9 @@ func (cli CLI) BuildOpTarget(ctx *kong.Context) op.Target {
 	}
 
 	return op.Target{
-		AccountName: cli.Account,
-		VaultName:   cli.Vault,
-		ItemName:    cli.Item,
+		Account:  cli.Account,
+		Vault:    cli.Vault,
+		ItemName: cli.Item,
 	}
 }
 

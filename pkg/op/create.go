@@ -67,7 +67,7 @@ func (c *Client) BuildCreateItemRequest(envPairs map[string]string) (ItemCreateR
 }
 
 type SecretResponse struct {
-	AccountName string
+	Account     string
 	VaultName   string
 	VaultID     string
 	ItemName    string
@@ -83,18 +83,18 @@ type FieldRef struct {
 func (sr *SecretResponse) GetFieldRefs() []FieldRef {
 	ret := []FieldRef{}
 	for _, field := range sr.FieldLabels {
-		ret = append(ret, FieldRef{Label: field, Ref: fmt.Sprintf("{{op://%s/%s/%s}}", sr.VaultName, sr.ItemName, field)})
+		ret = append(ret, FieldRef{Label: field, Ref: fmt.Sprintf("{{op://%s/%s/%s}}", sr.VaultID, sr.ItemID, field)})
 	}
 	return ret
 }
 
 func (c *Client) GetSecrets(resp *ItemCreateResponse) (*SecretResponse, error) {
 	ret := SecretResponse{
-		AccountName: c.Target.AccountName,
-		VaultName:   c.Target.VaultName,
-		VaultID:     resp.Vault.ID,
-		ItemName:    resp.Title,
-		ItemID:      resp.ID,
+		Account:   c.Target.Account,
+		VaultName: resp.Vault.Name,
+		VaultID:   resp.Vault.ID,
+		ItemName:  resp.Title,
+		ItemID:    resp.ID,
 	}
 
 	for _, field := range resp.Fields {

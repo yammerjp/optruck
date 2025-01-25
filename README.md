@@ -42,7 +42,7 @@ DATABASE_URL=your-database-url
 
 2. Upload secrets to 1Password and generate a template:
 ```bash
-optruck MySecrets --vault YourVault --account your.1password.com
+optruck MySecrets --vault MyVault --account my.1password.com
 ```
 
 This will:
@@ -59,7 +59,7 @@ op inject -i .env.1password -o .env
 
 1. Mirror secrets from a .env file (default behavior):
 ```bash
-optruck MySecrets
+optruck MySecrets --vault MyVault --account my.1password.com
 ```
 
 2. Use a custom .env file:
@@ -100,11 +100,12 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 
 ### General Options
 
-- `--vault <name>`: Name of the 1Password Vault
-- `--account <url>`: 1Password account URL
+- `--vault <value>`: 1Password Vault (e.g., "Development" or "abcd1234efgh5678")
+- `--account <value>`: 1Password account (e.g., "my.1password.com" or "my.1password.example.com")
 - `--overwrite`: Overwrite existing 1Password item and output file
 - `--interactive`: Enable interactive mode for selecting item, account, and vault
 - `--log-level <level>`: Set log level (debug|info|warn|error)
+- `--log-output <path>`: Set the log output (<file path>). If not specified, output to stdout
 - `-h, --help`: Show help
 - `--version`: Show version
 

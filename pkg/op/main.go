@@ -6,9 +6,9 @@ import (
 )
 
 type Target struct {
-	AccountName string
-	VaultName   string
-	ItemName    string
+	Account  string
+	Vault    string
+	ItemName string
 }
 
 type Client struct {
@@ -23,11 +23,11 @@ func NewClient(target Target) *Client {
 	}
 }
 func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
-	if c.Target.AccountName != "" {
-		args = append(args, "--account", c.Target.AccountName)
+	if c.Target.Account != "" {
+		args = append(args, "--account", c.Target.Account)
 	}
-	if c.Target.VaultName != "" {
-		args = append(args, "--vault", c.Target.VaultName)
+	if c.Target.Vault != "" {
+		args = append(args, "--vault", c.Target.Vault)
 	}
 	args = append(args, "--format", "json", "item")
 	return c.exec.Command("op", args...)
