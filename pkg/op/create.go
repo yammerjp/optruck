@@ -6,33 +6,6 @@ import (
 	"os"
 )
 
-/*
-{
-  "title": "",
-  "category": "PASSWORD",
-  "fields": [
-    {
-      "id": "password",
-      "type": "CONCEALED",
-      "purpose": "PASSWORD",
-      "label": "password",
-      "password_details": {
-        "strength": "TERRIBLE"
-      },
-      "value": ""
-    },
-    {
-      "id": "notesPlain",
-      "type": "STRING",
-      "purpose": "NOTES",
-      "label": "notesPlain",
-      "value": ""
-    }
-  ]
-}
-
-*/
-
 type ItemCreateRequest struct {
 	Title    string
 	Category string
