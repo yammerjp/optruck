@@ -124,21 +124,6 @@ type CLI struct {
 	LogOutput string `name:"log-output" help:"Set the log output (<file path>). If not specified, no logging is done."`
 }
 
-func (cli CLI) validateAction(ctx *kong.Context) {
-	if cli.Upload && cli.Template && cli.Mirror {
-		ctx.Fatalf("only one action can be specified")
-	}
-	if cli.Upload && cli.Template {
-		ctx.Fatalf("cannot use both --upload and --template")
-	}
-	if cli.Upload && cli.Mirror {
-		ctx.Fatalf("cannot use both --upload and --mirror")
-	}
-	if cli.Template && cli.Mirror {
-		ctx.Fatalf("cannot use both --template and --mirror")
-	}
-}
-
 func Run() {
 	cli := CLI{}
 	ctx := kong.Parse(&cli,
