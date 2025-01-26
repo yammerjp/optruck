@@ -2,18 +2,15 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
 
 	"github.com/yammerjp/optruck/pkg/actions"
 	"github.com/yammerjp/optruck/pkg/datasources"
 	"github.com/yammerjp/optruck/pkg/op"
 	"github.com/yammerjp/optruck/pkg/output"
 )
-
-// Action は実行可能なアクションを表すインターフェース
-type Action interface {
-	Run() error
-}
 
 // ConfigBuilder は設定の構築を担当する
 type ConfigBuilder struct {
@@ -26,11 +23,18 @@ type ConfigBuilder struct {
 	output       string
 	outputFormat string
 	overwrite    bool
-	logger       *slog.Logger
+	interactive  bool
+	logLevel     string
+	logFile      string
 }
 
 func NewConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{}
+}
+
+func (b *ConfigBuilder) WithInteractive(interactive bool) *ConfigBuilder {
+	b.interactive = interactive
+	return b
 }
 
 func (b *ConfigBuilder) WithItem(item string) *ConfigBuilder {
@@ -78,9 +82,48 @@ func (b *ConfigBuilder) WithOverwrite(overwrite bool) *ConfigBuilder {
 	return b
 }
 
-func (b *ConfigBuilder) WithLogger(logger *slog.Logger) *ConfigBuilder {
-	b.logger = logger
+func (b *ConfigBuilder) WithLogLevel(logLevel string) *ConfigBuilder {
+	b.logLevel = logLevel
 	return b
+}
+
+func (b *ConfigBuilder) WithLogFile(logFile string) *ConfigBuilder {
+	b.logFile = logFile
+	return b
+}
+
+func (b *ConfigBuilder) BuildLogger() (*slog.Logger, func(), error) {
+	var logLevel slog.Level
+	switch b.logLevel {
+	case "debug":
+		logLevel = slog.LevelDebug
+	case "info":
+		logLevel = slog.LevelInfo
+	case "warn":
+		logLevel = slog.LevelWarn
+	case "error":
+		logLevel = slog.LevelError
+	default:
+		logLevel = slog.LevelInfo
+	}
+
+	var f io.Writer
+	var cleanup func()
+
+	if b.logFile == "" {
+		f = io.Discard
+		cleanup = func() {}
+	} else {
+		var err error
+		f, err = os.OpenFile(b.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return nil, nil, err
+		}
+		cleanup = func() {
+			f.(io.WriteCloser).Close()
+		}
+	}
+	return slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel})), cleanup, nil
 }
 
 // validateCommon は共通のバリデーションルールを実行
@@ -168,75 +211,94 @@ func (b *ConfigBuilder) buildDest() (output.Dest, error) {
 }
 
 // BuildUpload はアップロードアクションを構築
-func (b *ConfigBuilder) BuildUpload() (Action, error) {
+func (b *ConfigBuilder) BuildUpload() (actions.Action, func(), error) {
 	if err := b.validateCommon(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ds, err := b.buildDataSource()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	logger, cleanup, err := b.BuildLogger()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return &actions.UploadConfig{
-		Logger:     b.logger,
+		Logger:     logger,
 		Target:     b.buildOpTarget(),
 		DataSource: ds,
 		Overwrite:  b.overwrite,
-	}, nil
+	}, cleanup, nil
 }
 
 // BuildTemplate はテンプレート生成アクションを構築
-func (b *ConfigBuilder) BuildTemplate() (Action, error) {
+func (b *ConfigBuilder) BuildTemplate() (actions.Action, func(), error) {
 	if err := b.validateCommon(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dest, err := b.buildDest()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	logger, cleanup, err := b.BuildLogger()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return &actions.TemplateConfig{
-		Logger:    b.logger,
+		Logger:    logger,
 		Target:    b.buildOpTarget(),
 		Dest:      dest,
 		Overwrite: b.overwrite,
-	}, nil
+	}, cleanup, nil
 }
 
 // BuildMirror はミラーアクションを構築
-func (b *ConfigBuilder) BuildMirror() (Action, error) {
+func (b *ConfigBuilder) BuildMirror() (actions.Action, func(), error) {
 	if err := b.validateCommon(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ds, err := b.buildDataSource()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dest, err := b.buildDest()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	logger, cleanup, err := b.BuildLogger()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return &actions.MirrorConfig{
-		Logger:     b.logger,
+		Logger:     logger,
 		Target:     b.buildOpTarget(),
 		DataSource: ds,
 		Dest:       dest,
 		Overwrite:  b.overwrite,
-	}, nil
+	}, cleanup, nil
 }
 
 // Build は指定されたアクションを構築
-func (b *ConfigBuilder) Build(isUpload, isTemplate bool) (Action, error) {
-	if isUpload && !isTemplate {
+func (b *ConfigBuilder) Build(isUpload, isTemplate, isMirror bool) (actions.Action, func(), error) {
+	if !isUpload && !isTemplate {
+		// mirror is default actions.Action
+		return b.BuildMirror()
+	}
+	if isUpload && !isTemplate && !isMirror {
 		return b.BuildUpload()
 	}
-	if !isUpload && isTemplate {
+	if !isUpload && isTemplate && !isMirror {
 		return b.BuildTemplate()
 	}
-	return b.BuildMirror()
+	return nil, nil, fmt.Errorf("only one of --upload, --template, or --mirror can be specified")
 }

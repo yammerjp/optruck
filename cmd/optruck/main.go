@@ -2,8 +2,6 @@ package optruck
 
 import (
 	"fmt"
-	"io"
-	"log/slog"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -126,16 +124,6 @@ type CLI struct {
 	LogOutput string `name:"log-output" help:"Set the log output (<file path>). If not specified, no logging is done."`
 }
 
-func (cli CLI) validateItem(ctx *kong.Context) {
-	if cli.Item == "" && !cli.Interactive {
-		ctx.Fatalf("<item> is required unless --interactive or --help or --version is used")
-	}
-	if len(cli.Item) > 100 {
-		// Limiting to 100 characters for simplicity; no deeper meaning behind this choice.
-		ctx.Fatalf("item must be less than 100 characters")
-	}
-}
-
 func (cli CLI) validateAction(ctx *kong.Context) {
 	if cli.Upload && cli.Template && cli.Mirror {
 		ctx.Fatalf("only one action can be specified")
@@ -151,39 +139,6 @@ func (cli CLI) validateAction(ctx *kong.Context) {
 	}
 }
 
-func (cli CLI) BuildLogger(ctx *kong.Context) (*slog.Logger, func()) {
-	var logLevel slog.Level
-	switch cli.LogLevel {
-	case "debug":
-		logLevel = slog.LevelDebug
-	case "info":
-		logLevel = slog.LevelInfo
-	case "warn":
-		logLevel = slog.LevelWarn
-	case "error":
-		logLevel = slog.LevelError
-	default:
-		ctx.Fatalf("invalid log level: %s", cli.LogLevel)
-	}
-	var logWriter io.Writer
-	var cleanup func() = func() {}
-
-	if cli.LogOutput == "" {
-		logWriter = io.Discard
-	} else {
-		// Open log file
-		f, err := os.OpenFile(cli.LogOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-		if err != nil {
-			ctx.Fatalf("failed to open log file: %v", err)
-		}
-		logWriter = f
-		cleanup = func() {
-			f.Close()
-		}
-	}
-	return slog.New(slog.NewJSONHandler(logWriter, &slog.HandlerOptions{Level: logLevel})), cleanup
-}
-
 func Run() {
 	cli := CLI{}
 	ctx := kong.Parse(&cli,
@@ -192,24 +147,15 @@ func Run() {
 		kong.UsageOnError(),
 		kong.Help(helpPrinter),
 	)
-	logger, cleanup := cli.BuildLogger(ctx)
-	defer cleanup()
 
 	// Handle version flag
 	if cli.Version {
-		logger.Debug("optruck version", "version", version)
 		fmt.Printf("optruck version %s\n", version)
 		os.Exit(0)
 	}
 
-	if cli.Interactive {
-		ctx.Fatalf("interactive is not implemented")
-	}
-
-	cli.validateItem(ctx)
-	cli.validateAction(ctx)
-
 	builder := config.NewConfigBuilder().
+		WithInteractive(cli.Interactive).
 		WithItem(cli.Item).
 		WithVault(cli.Vault).
 		WithAccount(cli.Account).
@@ -219,16 +165,16 @@ func Run() {
 		WithOutput(cli.Output).
 		WithOutputFormat(cli.OutputFormat).
 		WithOverwrite(cli.Overwrite).
-		WithLogger(logger)
+		WithLogLevel(cli.LogLevel).
+		WithLogFile(cli.LogOutput)
 
-	action, err := builder.Build(cli.Upload, cli.Template)
+	action, cleanup, err := builder.Build(cli.Upload, cli.Template, cli.Mirror)
 	if err != nil {
-		logger.Error("failed to build action", "error", err)
 		ctx.Fatalf("%v", err)
 	}
 
+	defer cleanup()
 	if err := action.Run(); err != nil {
-		logger.Error("failed to run action", "error", err)
 		ctx.Fatalf("%v", err)
 	}
 }
