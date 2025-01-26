@@ -44,7 +44,6 @@ func TestK8sSecretTemplateDestWrite(t *testing.T) {
 #   - 1password vault: TestVault
 # To restore, run the following command:
 #   $ op inject -i test1.yaml | kubectl apply -f -
-
 apiVersion: v1
 kind: Secret
 metadata:
@@ -53,7 +52,8 @@ metadata:
 type: Opaque
 data:
   DB_USER: {{op://vault-id/item-id/DB_USER}}
-  DB_PASS: {{op://vault-id/item-id/DB_PASS}}`,
+  DB_PASS: {{op://vault-id/item-id/DB_PASS}}
+`,
 			overwrite:    false,
 			existingFile: false,
 		},
@@ -75,7 +75,6 @@ data:
 #   - 1password vault: TestVault
 # To restore, run the following command:
 #   $ op inject -i test2.yaml | kubectl apply -f -
-
 apiVersion: v1
 kind: Secret
 metadata:
@@ -83,7 +82,8 @@ metadata:
   namespace: production
 type: Opaque
 data:
-  API_KEY: {{op://vault-id/item-id/API_KEY}}`,
+  API_KEY: {{op://vault-id/item-id/API_KEY}}
+`,
 			overwrite:    false,
 			existingFile: false,
 		},
@@ -107,7 +107,6 @@ data:
 #   - 1password vault: TestVault
 # To restore, run the following command:
 #   $ op inject -i test3.yaml | kubectl apply -f -
-
 apiVersion: v1
 kind: Secret
 metadata:
@@ -115,7 +114,8 @@ metadata:
   namespace: default
 type: Opaque
 data:
-  API_KEY: {{op://vault-id/item-id/API_KEY}}`,
+  API_KEY: {{op://vault-id/item-id/API_KEY}}
+`,
 			overwrite:    true,
 			existingFile: true,
 		},

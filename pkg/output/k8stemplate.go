@@ -46,7 +46,6 @@ func (d *K8sSecretTemplateDest) Write(secretReference *op.SecretReference, overw
 #   - 1password vault: {{.SecretReference.VaultName}}{{end}}
 # To restore, run the following command:
 #   $ op inject -i {{.K8sSecretTemplateDest.GetBasename}} | kubectl apply -f -
-
 apiVersion: v1
 kind: Secret
 metadata:
@@ -54,7 +53,8 @@ metadata:
   namespace: {{.K8sSecretTemplateDest.Namespace}}
 type: Opaque
 data:{{range .SecretReference.GetFieldRefs}}
-  {{.Label}}: {{.Ref}}{{end}}`)
+  {{.Label}}: {{.Ref}}{{end}}
+`)
 	if err != nil {
 		return err
 	}

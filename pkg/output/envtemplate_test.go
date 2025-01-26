@@ -42,10 +42,8 @@ func TestEnvTemplateDestWrite(t *testing.T) {
 #   - 1password vault: TestVault
 # To restore, run the following command:
 #   $ op inject -i test1.env -o .env
-
 DB_USER={{op://vault-id/item-id/DB_USER}}
 DB_PASS={{op://vault-id/item-id/DB_PASS}}
-
 `,
 			overwrite:    false,
 			existingFile: false,
@@ -66,9 +64,7 @@ DB_PASS={{op://vault-id/item-id/DB_PASS}}
 #   - 1password vault: TestVault
 # To restore, run the following command:
 #   $ op inject -i test2.env -o .env
-
 API_KEY={{op://vault-id/item-id/API_KEY}}
-
 `,
 			overwrite:    false,
 			existingFile: false,
@@ -91,9 +87,7 @@ API_KEY={{op://vault-id/item-id/API_KEY}}
 #   - 1password vault: TestVault
 # To restore, run the following command:
 #   $ op inject -i test3.env -o .env
-
 API_KEY={{op://vault-id/item-id/API_KEY}}
-
 `,
 			overwrite:    true,
 			existingFile: true,
