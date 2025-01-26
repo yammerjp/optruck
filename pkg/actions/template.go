@@ -9,10 +9,10 @@ import (
 )
 
 type TemplateConfig struct {
-	Logger    *slog.Logger
-	Target    op.Target
-	Dest      output.Dest
-	Overwrite bool
+	Logger            *slog.Logger
+	Target            op.Target
+	Dest              output.Dest
+	OverwriteTemplate bool
 }
 
 func (config TemplateConfig) Run() error {
@@ -25,7 +25,7 @@ func (config TemplateConfig) Run() error {
 	config.Logger.Debug("Fetched secret reference", "secretReference", secretReference)
 
 	config.Logger.Debug("Starting template action for item", "item", config.Target.ItemName)
-	err = config.Dest.Write(secretReference, config.Overwrite)
+	err = config.Dest.Write(secretReference, config.OverwriteTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to write secret reference: %w", err)
 	}

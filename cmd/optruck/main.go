@@ -101,22 +101,24 @@ type CLI struct {
 	// Actions
 	Upload   bool `name:"upload" help:"Upload secrets to 1Password Vault."`
 	Template bool `name:"template" help:"Generate a restoration template from the 1Password Vault."`
-	Mirror   bool `name:"mirror" help:"Upload secrets and generate a restoration template (default)." default:"true"`
+	Mirror   bool `name:"mirror" help:"Upload secrets and generate a restoration template (default)."` // Don't set kong's default value to distinguish mirror option in interactive mode
 
 	// Data Source Options
-	EnvFile      string `name:"env-file" help:"Path to the .env file containing secrets." default:".env"`
+	EnvFile      string `name:"env-file" help:"Path to the .env file containing secrets. (default: '.env')"` // Don't set kong's default value to distinguish env-file option in interactive mode
 	K8sSecret    string `name:"k8s-secret" help:"Name of the Kubernetes Secret to fetch secrets from."`
-	K8sNamespace string `name:"k8s-namespace" help:"Kubernetes namespace." default:"default"`
+	K8sNamespace string `name:"k8s-namespace" help:"Kubernetes namespace."` // Don't set kong's default value to distinguish k8s-namespace option in interactive mode
 
 	// Output Options
-	Output       string `name:"output" help:"Path to save the restoration template file." default:".env.1password"`
-	OutputFormat string `name:"output-format" help:"Format of the output file (env|k8s)." enum:"env,k8s" default:"env"`
+	Output       string `name:"output" help:"Path to save the restoration template file. (default: '.env.1password' if format is env, otherwise '<name>-secret.yaml.1password' if format is k8s)"` // Don't set kong's default value to distinguish output option in interactive mode
+	OutputFormat string `name:"output-format" help:"Format of the output file (env|k8s)."`                                                                                                         // Don't set kong's default value and don't use enum to distinguish output-format option in interactive mode
 
 	// General Options
-	Vault       string `name:"vault" help:"1Password Vault (e.g., 'Development' or 'abcd1234efgh5678')."`
-	Account     string `name:"account" help:"1Password account (e.g., 'my.1password.com' or 'my.1password.example.com')."`
-	Overwrite   bool   `name:"overwrite" help:"Overwrite the existing 1Password item and the output file if they exist."`
-	Interactive bool   `name:"interactive" help:"Enable interactive mode for selecting the item, account, and vault."`
+	Vault             string `name:"vault" help:"1Password Vault (e.g., 'Development' or 'abcd1234efgh5678')."`
+	Account           string `name:"account" help:"1Password account (e.g., 'my.1password.com' or 'my.1password.example.com')."`
+	Overwrite         bool   `name:"overwrite" help:"Overwrite the existing 1Password item and the output file if they exist."`
+	OverwriteTarget   bool   `name:"overwrite-target" help:"Overwrite the existing 1Password item if it exists."`
+	OverwriteTemplate bool   `name:"overwrite-template" help:"Overwrite the existing output file if it exists."`
+	Interactive       bool   `name:"interactive" help:"Enable interactive mode for selecting the item, account, and vault." short:"i"`
 
 	// Misc
 	Version   bool   `name:"version" help:"Show the version of optruck."`
@@ -140,7 +142,6 @@ func Run() {
 	}
 
 	builder := config.NewConfigBuilder().
-		WithInteractive(cli.Interactive).
 		WithItem(cli.Item).
 		WithVault(cli.Vault).
 		WithAccount(cli.Account).
@@ -150,10 +151,26 @@ func Run() {
 		WithOutput(cli.Output).
 		WithOutputFormat(cli.OutputFormat).
 		WithOverwrite(cli.Overwrite).
+		WithOverwriteTarget(cli.OverwriteTarget).
+		WithOverwriteTemplate(cli.OverwriteTemplate).
 		WithLogLevel(cli.LogLevel).
-		WithLogFile(cli.LogOutput)
+		WithLogFile(cli.LogOutput).
+		WithUpload(cli.Upload).
+		WithTemplate(cli.Template).
+		WithMirror(cli.Mirror)
 
-	action, cleanup, err := builder.Build(cli.Upload, cli.Template, cli.Mirror)
+	if cli.Interactive {
+		err := builder.SetConfigInteractively()
+		if err != nil {
+			ctx.Fatalf("%v", err)
+		}
+	}
+	err := builder.SetDefaultIfEmpty()
+	if err != nil {
+		ctx.Fatalf("%v", err)
+	}
+
+	action, cleanup, err := builder.Build()
 	if err != nil {
 		ctx.Fatalf("%v", err)
 	}

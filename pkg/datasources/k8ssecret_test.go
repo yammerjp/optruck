@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/yammerjp/optruck/pkg/kube"
 	"k8s.io/utils/exec"
 	testingexec "k8s.io/utils/exec/testing"
 )
@@ -151,7 +152,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 			mockErr:         nil,
 			wantErr:         true,
 			want:            nil,
-			skipCommandTest: true, // validation error, so command is not executed
+			skipCommandTest: true, // バリデーションエラーでコマンドは実行されない
 		},
 		{
 			name:            "invalid secret name",
@@ -161,7 +162,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 			mockErr:         nil,
 			wantErr:         true,
 			want:            nil,
-			skipCommandTest: true, // validation error, so command is not executed
+			skipCommandTest: true, // バリデーションエラーでコマンドは実行されない
 		},
 	}
 
@@ -186,7 +187,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 			}
 			fakeExec.CommandScript = []testingexec.FakeCommandAction{cmdAction}
 
-			client := &K8sClient{fakeExec}
+			client := &kube.Client{fakeExec}
 			source := &K8sSecretSource{
 				Namespace:  tt.namespace,
 				SecretName: tt.secretName,
@@ -195,7 +196,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 
 			got, err := source.FetchSecrets()
 
-			// validate command and args (skip if validation error)
+			// コマンドと引数の検証（バリデーションエラーの場合はスキップ）
 			if !tt.skipCommandTest {
 				if capturedCommand != tt.expectedCommand {
 					t.Errorf("expected command %q, got %q", tt.expectedCommand, capturedCommand)

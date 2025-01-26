@@ -1,13 +1,10 @@
 package datasources
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 
-	"k8s.io/utils/exec"
+	"github.com/yammerjp/optruck/pkg/kube"
 )
 
 var dns1123SubdomainRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*[a-z0-9]$`)
@@ -27,7 +24,7 @@ func validateDNS1123Subdomain(name string) error {
 type K8sSecretSource struct {
 	Namespace  string
 	SecretName string
-	Client     *K8sClient
+	Client     *kube.Client
 }
 
 func (s *K8sSecretSource) FetchSecrets() (map[string]string, error) {
@@ -43,30 +40,5 @@ func (s *K8sSecretSource) FetchSecrets() (map[string]string, error) {
 		return nil, err
 	}
 
-	return secrets, nil
-}
-
-type K8sClient struct {
-	exec.Interface
-}
-
-func NewK8sClient() *K8sClient {
-	return &K8sClient{exec.New()}
-}
-
-func (c *K8sClient) GetSecret(namespace, secretName string) (map[string]string, error) {
-	// TODO: use k8s.io/client-go
-	cmd := c.Command("kubectl", "get", "secret", "-n", namespace, secretName, "-o", "jsonpath={.data}")
-	// ex: {"AWS_ACCESS_KEY_ID":"YWJjZGVmZ2hpamtsbW5vcA==","AWS_SECRET_ACCESS_KEY":"YWJjZGVmZ2hpamtsbW5vcA=="}
-	stdout := &bytes.Buffer{}
-	cmd.SetStdout(stdout)
-	cmd.SetStderr(os.Stderr)
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to get secret: %w", err)
-	}
-	secrets := make(map[string]string)
-	if err := json.Unmarshal(stdout.Bytes(), &secrets); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal secret: %w", err)
-	}
 	return secrets, nil
 }

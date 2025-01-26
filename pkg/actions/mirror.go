@@ -9,11 +9,12 @@ import (
 )
 
 type MirrorConfig struct {
-	Logger     *slog.Logger
-	Target     op.Target
-	DataSource datasources.Source
-	Dest       output.Dest
-	Overwrite  bool
+	Logger            *slog.Logger
+	Target            op.Target
+	DataSource        datasources.Source
+	Dest              output.Dest
+	OverwriteTarget   bool
+	OverwriteTemplate bool
 }
 
 func (config MirrorConfig) Run() error {
@@ -26,14 +27,14 @@ func (config MirrorConfig) Run() error {
 	}
 	config.Logger.Debug("Fetched secrets from data source", "count", len(secrets))
 
-	secretsResp, err := config.Target.BuildClient().UploadItem(secrets, config.Overwrite)
+	secretsResp, err := config.Target.BuildClient().UploadItem(secrets, config.OverwriteTarget)
 	if err != nil {
 		config.Logger.Error("failed to upload secrets to 1Password", "error", err)
 		return err
 	}
 	config.Logger.Debug("Uploaded secrets to 1Password successfully")
 
-	err = config.Dest.Write(secretsResp, config.Overwrite)
+	err = config.Dest.Write(secretsResp, config.OverwriteTemplate)
 	if err != nil {
 		config.Logger.Error("failed to write output template", "error", err)
 		return err
