@@ -94,7 +94,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 		want            map[string]string
 		expectedCommand string
 		expectedArgs    []string
-		skipCommandTest bool // コマンドテストをスキップするフラグ
+		skipCommandTest bool // flag to skip command test
 	}{
 		{
 			name:       "success",
@@ -151,7 +151,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 			mockErr:         nil,
 			wantErr:         true,
 			want:            nil,
-			skipCommandTest: true, // バリデーションエラーでコマンドは実行されない
+			skipCommandTest: true, // validation error, so command is not executed
 		},
 		{
 			name:            "invalid secret name",
@@ -161,7 +161,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 			mockErr:         nil,
 			wantErr:         true,
 			want:            nil,
-			skipCommandTest: true, // バリデーションエラーでコマンドは実行されない
+			skipCommandTest: true, // validation error, so command is not executed
 		},
 	}
 
@@ -195,7 +195,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 
 			got, err := source.FetchSecrets()
 
-			// コマンドと引数の検証（バリデーションエラーの場合はスキップ）
+			// validate command and args (skip if validation error)
 			if !tt.skipCommandTest {
 				if capturedCommand != tt.expectedCommand {
 					t.Errorf("expected command %q, got %q", tt.expectedCommand, capturedCommand)

@@ -8,20 +8,17 @@ import (
 	"github.com/yammerjp/optruck/pkg/output"
 )
 
-// MirrorConfig は、mirror アクションに必要な設定を表します
 type MirrorConfig struct {
 	Logger     *slog.Logger
 	Target     op.Target
-	DataSource datasources.Source // データソース（.envファイルやKubernetes Secretなど）
-	Dest       output.Dest        // 出力先
-	Overwrite  bool               // 上書きオプション
+	DataSource datasources.Source
+	Dest       output.Dest
+	Overwrite  bool
 }
 
-// Mirror は、シークレットをアップロードしてテンプレートを生成するアクションを実行します
 func (config MirrorConfig) Run() error {
 	config.Logger.Debug("Starting mirror action for item", "item", config.Target.ItemName)
 
-	// データソースからシークレットを取得
 	secrets, err := config.DataSource.FetchSecrets()
 	if err != nil {
 		config.Logger.Error("failed to fetch secrets from data source", "error", err)

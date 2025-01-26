@@ -24,7 +24,6 @@ func validateDNS1123Subdomain(name string) error {
 	return nil
 }
 
-// TODO: implement
 type K8sSecretSource struct {
 	Namespace  string
 	SecretName string
@@ -56,6 +55,7 @@ func NewK8sClient() *K8sClient {
 }
 
 func (c *K8sClient) GetSecret(namespace, secretName string) (map[string]string, error) {
+	// TODO: use k8s.io/client-go
 	cmd := c.Command("kubectl", "get", "secret", "-n", namespace, secretName, "-o", "jsonpath={.data}")
 	// ex: {"AWS_ACCESS_KEY_ID":"YWJjZGVmZ2hpamtsbW5vcA==","AWS_SECRET_ACCESS_KEY":"YWJjZGVmZ2hpamtsbW5vcA=="}
 	stdout := &bytes.Buffer{}

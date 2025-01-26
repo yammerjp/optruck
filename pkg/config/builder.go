@@ -12,7 +12,6 @@ import (
 	"github.com/yammerjp/optruck/pkg/output"
 )
 
-// ConfigBuilder は設定の構築を担当する
 type ConfigBuilder struct {
 	item         string
 	vault        string
@@ -126,7 +125,6 @@ func (b *ConfigBuilder) BuildLogger() (*slog.Logger, func(), error) {
 	return slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel})), cleanup, nil
 }
 
-// validateCommon は共通のバリデーションルールを実行
 func (b *ConfigBuilder) validateCommon() error {
 	if b.item == "" {
 		return fmt.Errorf("item is required")
@@ -165,7 +163,6 @@ func (b *ConfigBuilder) validateCommon() error {
 	return nil
 }
 
-// buildOpTarget は1Password操作のターゲットを構築
 func (b *ConfigBuilder) buildOpTarget() op.Target {
 	return op.Target{
 		Account:  b.account,
@@ -174,7 +171,6 @@ func (b *ConfigBuilder) buildOpTarget() op.Target {
 	}
 }
 
-// buildDataSource はデータソースを構築
 func (b *ConfigBuilder) buildDataSource() (datasources.Source, error) {
 	if b.k8sSecret != "" {
 		if b.envFile != "" {
@@ -196,7 +192,6 @@ func (b *ConfigBuilder) buildDataSource() (datasources.Source, error) {
 	return &datasources.EnvFileSource{Path: b.envFile}, nil
 }
 
-// buildDest は出力先を構築
 func (b *ConfigBuilder) buildDest() (output.Dest, error) {
 	if b.outputFormat == "k8s" {
 		if b.k8sSecret == "" {
@@ -232,7 +227,6 @@ func (b *ConfigBuilder) buildDest() (output.Dest, error) {
 	return nil, fmt.Errorf("invalid output format: %s", b.outputFormat)
 }
 
-// BuildUpload はアップロードアクションを構築
 func (b *ConfigBuilder) BuildUpload() (actions.Action, func(), error) {
 	if err := b.validateCommon(); err != nil {
 		return nil, nil, err
@@ -256,7 +250,6 @@ func (b *ConfigBuilder) BuildUpload() (actions.Action, func(), error) {
 	}, cleanup, nil
 }
 
-// BuildTemplate はテンプレート生成アクションを構築
 func (b *ConfigBuilder) BuildTemplate() (actions.Action, func(), error) {
 	if err := b.validateCommon(); err != nil {
 		return nil, nil, err
@@ -280,7 +273,6 @@ func (b *ConfigBuilder) BuildTemplate() (actions.Action, func(), error) {
 	}, cleanup, nil
 }
 
-// BuildMirror はミラーアクションを構築
 func (b *ConfigBuilder) BuildMirror() (actions.Action, func(), error) {
 	if err := b.validateCommon(); err != nil {
 		return nil, nil, err
@@ -310,7 +302,6 @@ func (b *ConfigBuilder) BuildMirror() (actions.Action, func(), error) {
 	}, cleanup, nil
 }
 
-// Build は指定されたアクションを構築
 func (b *ConfigBuilder) Build(isUpload, isTemplate, isMirror bool) (actions.Action, func(), error) {
 	if !isUpload && !isTemplate {
 		// mirror is default actions.Action

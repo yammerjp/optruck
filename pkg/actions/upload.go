@@ -12,9 +12,9 @@ import (
 type UploadConfig struct {
 	Logger     *slog.Logger
 	Target     op.Target
-	DataSource datasources.Source // データソース（.envファイルやKubernetes Secretなど）
-	Dest       output.Dest        // 出力先
-	Overwrite  bool               // 上書きオプション
+	DataSource datasources.Source
+	Dest       output.Dest
+	Overwrite  bool
 }
 
 func (config UploadConfig) Run() error {

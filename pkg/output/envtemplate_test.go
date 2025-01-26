@@ -22,7 +22,7 @@ func TestEnvTemplateDestWrite(t *testing.T) {
 		secretReference *op.SecretReference
 		expected        string
 		overwrite       bool
-		existingFile    bool // ファイルが既に存在する場合true
+		existingFile    bool // file exists
 	}{
 		{
 			name: "basic case",
