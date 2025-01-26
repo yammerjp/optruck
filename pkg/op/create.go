@@ -92,7 +92,11 @@ func (c *Client) CreateItem(envPairs map[string]string) (*SecretReference, error
 		return nil, err
 	}
 
-	cmd := c.BuildItemCommand("create")
+	cmd := c.BuildCommand(CommandOptions{
+		AddAccount: true,
+		AddVault:   true,
+		Args:       []string{"item", "create"},
+	})
 	cmd.SetStdin(bytes.NewBuffer(reqStr))
 	var stdout bytes.Buffer
 	cmd.SetStdout(&stdout)

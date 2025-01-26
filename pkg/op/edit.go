@@ -46,7 +46,11 @@ func (c *Client) EditItem(envPairs map[string]string) (*SecretReference, error) 
 	}
 
 	var stdout bytes.Buffer
-	cmd := c.BuildItemCommand("edit", c.Target.ItemName)
+	cmd := c.BuildCommand(CommandOptions{
+		AddAccount: true,
+		AddVault:   true,
+		Args:       []string{"item", "edit", c.Target.ItemName},
+	})
 	cmd.SetStdin(bytes.NewBuffer(reqStr))
 	cmd.SetStdout(&stdout)
 	cmd.SetStderr(os.Stderr)

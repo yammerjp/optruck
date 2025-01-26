@@ -13,7 +13,11 @@ var ErrMoreThanOneItemMatches = errors.New("more than one item matches")
 var ErrItemNotFound = errors.New("item not found")
 
 func (c *Client) GetItem() (*SecretReference, error) {
-	cmd := c.BuildItemCommand("get", c.Target.ItemName)
+	cmd := c.BuildCommand(CommandOptions{
+		AddAccount: true,
+		AddVault:   true,
+		Args:       []string{"item", "get", c.Target.ItemName},
+	})
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)
@@ -24,7 +28,7 @@ func (c *Client) GetItem() (*SecretReference, error) {
 		slog.Error("failed to get item", "error", err)
 		stderrStr := stderrBuffer.String()
 		slog.Error("stderr", "stderr", stderrStr)
-		if strings.Contains(stderrStr, " isn't an item") && !strings.Contains(stderrStr, " Specify the item with its UUID, name, or domain.") {
+		if strings.Contains(stderrStr, " isn't an item") && strings.Contains(stderrStr, " Specify the item with its UUID, name, or domain.") {
 			slog.Error("item not found")
 			return nil, ErrItemNotFound
 		}

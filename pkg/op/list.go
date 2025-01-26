@@ -6,7 +6,11 @@ import (
 )
 
 func (c *Client) ListItems() ([]SecretReference, error) {
-	cmd := c.BuildItemCommand("list")
+	cmd := c.BuildCommand(CommandOptions{
+		AddAccount: true,
+		AddVault:   true,
+		Args:       []string{"item", "list"},
+	})
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)

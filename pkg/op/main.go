@@ -30,19 +30,6 @@ func (target Target) BuildClient() *Client {
 var ErrMoreThanOneItemFound = errors.New("more than one item found, please specify another item name")
 var ErrItemAlreadyExists = errors.New("item already exists, use --overwrite to update")
 
-func (c *Client) BuildItemCommand(args ...string) exec.Cmd {
-	args = append([]string{"item"}, args...)
-
-	if c.Target.Account != "" {
-		args = append(args, "--account", c.Target.Account)
-	}
-	if c.Target.Vault != "" {
-		args = append(args, "--vault", c.Target.Vault)
-	}
-	args = append(args, "--format", "json")
-	return c.exec.Command("op", args...)
-}
-
 func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*SecretReference, error) {
 	refs, err := c.FilterItems(c.Target.ItemName)
 	if err != nil {
