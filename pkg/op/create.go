@@ -21,48 +21,6 @@ type ItemCreateRequestField struct {
 	Value   string
 }
 
-type ItemResponse struct {
-	ID      string `json:"id"`
-	Title   string `json:"title"`
-	Version int    `json:"version"`
-	Vault   struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"vault"`
-	Category              string `json:"category"`
-	CreatedAt             string `json:"created_at"`
-	UpdatedAt             string `json:"updated_at"`
-	AdditionalInformation string `json:"additional_information"`
-	Fields                []struct {
-		ID              string `json:"id"`
-		Type            string `json:"type"`
-		Purpose         string `json:"purpose"`
-		Label           string `json:"label"`
-		Value           string `json:"value"`
-		Reference       string `json:"reference"`
-		PasswordDetails struct {
-			Strength string `json:"strength"`
-		} `json:"password_details"`
-	} `json:"fields"`
-}
-
-func (c *Client) BuildSecretReference(resp ItemResponse) *SecretReference {
-	fieldLabels := []string{}
-	for _, field := range resp.Fields {
-		if field.Purpose == "" {
-			fieldLabels = append(fieldLabels, field.Label)
-		}
-	}
-	return &SecretReference{
-		Account:     c.Target.Account,
-		VaultName:   resp.Vault.Name,
-		VaultID:     resp.Vault.ID,
-		ItemName:    resp.Title,
-		ItemID:      resp.ID,
-		FieldLabels: fieldLabels,
-	}
-}
-
 func (c *Client) CreateItem(envPairs map[string]string) (*SecretReference, error) {
 	req := ItemCreateRequest{
 		Title:    c.Target.ItemName,
