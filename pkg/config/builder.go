@@ -135,10 +135,32 @@ func (b *ConfigBuilder) validateCommon() error {
 		return fmt.Errorf("item must be less than 100 characters")
 	}
 	if b.vault == "" {
-		return fmt.Errorf("vault is required")
+		// FIXME: not use op.Client directly in plg/config
+		// if vault is not specified and exist only one vault, use it
+		opClient := b.buildOpTarget().BuildClient()
+		vaults, err := opClient.ListVaults()
+		if err != nil {
+			return fmt.Errorf("failed to list vaults: %w", err)
+		}
+		if len(vaults) == 1 {
+			b.vault = vaults[0].Name
+		} else {
+			return fmt.Errorf("vault is required")
+		}
 	}
 	if b.account == "" {
-		return fmt.Errorf("account is required")
+		// FIXME: not use op.Client directly in plg/config
+		// if account is not specified and exist only one account, use it
+		opClient := b.buildOpTarget().BuildClient()
+		accounts, err := opClient.ListAccounts()
+		if err != nil {
+			return fmt.Errorf("failed to list accounts: %w", err)
+		}
+		if len(accounts) == 1 {
+			b.account = accounts[0].URL
+		} else {
+			return fmt.Errorf("account is required")
+		}
 	}
 	return nil
 }
