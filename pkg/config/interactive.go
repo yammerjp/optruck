@@ -126,9 +126,8 @@ func (b *ConfigBuilder) setDataSourceInteractively() error {
 		return nil
 	}
 	prompt := promptui.Select{
-		Label:     "Select data source",
-		Items:     []string{"env file", "k8s secret"},
-		CursorPos: 2,
+		Label: "Select data source",
+		Items: []string{"env file", "k8s secret"},
 	}
 	_, result, err := prompt.Run()
 	if err != nil {
@@ -345,27 +344,6 @@ func (b *ConfigBuilder) setDestInteractively() error {
 	}
 
 	// TODO: create new function setOutputPathInteractively()
-	// FIXME: Having user select overwrite mode first is not user-friendly and should be changed
-	// set overwrite if not set
-	if !b.overwrite && !b.overwriteTemplate {
-		prompt := promptui.Select{
-			Label: "Select template overwrite mode",
-			Items: []string{"overwrite existing", "create new"},
-		}
-		_, result, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-		switch result {
-		case "overwrite existing":
-			b.overwriteTemplate = true
-		case "create new":
-			b.overwriteTemplate = false
-		default:
-			return fmt.Errorf("invalid selection: %s", result)
-		}
-	}
-
 	defaultOutputPath := ""
 	if b.outputFormat == "env" {
 		defaultOutputPath = defaultOutputPathOnEnv
@@ -375,46 +353,55 @@ func (b *ConfigBuilder) setDestInteractively() error {
 
 	// set output path if not set
 	if b.output == "" {
-		if b.overwrite || b.overwriteTemplate {
-			// validate existing file
-			prompt := promptui.Prompt{
-				Label:   "Enter output path",
-				Default: defaultOutputPath,
-				Validate: func(input string) error {
-					if input == "" {
-						return fmt.Errorf("output path is required")
+		prompt := promptui.Prompt{
+			Label:   "Enter output path",
+			Default: defaultOutputPath,
+			Validate: func(input string) error {
+				if input == "" {
+					return fmt.Errorf("output path is required")
+				}
+				stat, err := os.Stat(input)
+				if err != nil {
+					if os.IsNotExist(err) {
+						return nil
 					}
-					if _, err := os.Stat(input); err != nil {
-						return fmt.Errorf("output path does not exist")
-					}
-					return nil
-				},
+					return err
+				}
+				if stat.IsDir() {
+					return fmt.Errorf("output path is already created as a directory")
+				}
+				return nil
+			},
+		}
+		result, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		b.output = result
+
+		stat, err := os.Stat(result)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		if stat != nil && stat.IsDir() {
+			return fmt.Errorf("output path is already created as a directory")
+		}
+		if stat != nil && !stat.IsDir() {
+			if !b.overwrite && !b.overwriteTemplate {
+				// prompt to overwrite
+				prompt := promptui.Select{
+					Label: "Output path already exists. Do you want to overwrite?",
+					Items: []string{"overwrite", "abort"},
+				}
+				_, result, err := prompt.Run()
+				if err != nil {
+					return err
+				}
+				if result == "abort" {
+					return fmt.Errorf("aborted, overwrite does not allowed")
+				}
+				b.overwriteTemplate = true
 			}
-			result, err := prompt.Run()
-			if err != nil {
-				return err
-			}
-			b.output = result
-		} else {
-			// validate new file
-			prompt := promptui.Prompt{
-				Label:   "Enter output path",
-				Default: defaultOutputPath,
-				Validate: func(input string) error {
-					if input == "" {
-						return fmt.Errorf("output path is required")
-					}
-					if _, err := os.Stat(input); err == nil {
-						return fmt.Errorf("output path already exists")
-					}
-					return nil
-				},
-			}
-			result, err := prompt.Run()
-			if err != nil {
-				return err
-			}
-			b.output = result
 		}
 	}
 	return nil
