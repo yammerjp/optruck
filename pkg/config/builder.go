@@ -153,7 +153,7 @@ func (b *ConfigBuilder) BuildLogger() (*slog.Logger, func(), error) {
 	return slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel})), cleanup, nil
 }
 
-func (b *ConfigBuilder) validateCommon() error {
+func (b *ConfigBuilder) validateSpecially() error {
 	if b.overwriteTarget && b.overwrite {
 		return fmt.Errorf("cannot use both --overwrite-target and --overwrite")
 	}
@@ -167,17 +167,32 @@ func (b *ConfigBuilder) validateCommon() error {
 		return fmt.Errorf("cannot use --overwrite-template on upload action")
 	}
 
-	if b.item == "" {
-		return fmt.Errorf("item is required")
-	}
 	if len(b.item) > 100 {
 		return fmt.Errorf("item must be less than 100 characters")
 	}
+	return nil
+}
+
+func (b *ConfigBuilder) validateMissing() error {
+	if b.item == "" {
+		return fmt.Errorf("item is required")
+	}
+
 	if b.vault == "" {
 		return fmt.Errorf("vault is required")
 	}
 	if b.account == "" {
 		return fmt.Errorf("account is required")
+	}
+	return nil
+}
+
+func (b *ConfigBuilder) validateCommon() error {
+	if err := b.validateSpecially(); err != nil {
+		return err
+	}
+	if err := b.validateMissing(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -394,7 +409,10 @@ func (b *ConfigBuilder) SetDefaultIfEmpty() error {
 
 // TODO: create new file for interactive mode
 func (b *ConfigBuilder) SetConfigInteractively() error {
-	// FIXME: check to validate before interactive
+	if err := b.validateSpecially(); err != nil {
+		// Validate early before entering interactive mode, even though we'll check again later
+		return err
+	}
 
 	if err := b.setActionInteractively(); err != nil {
 		return err
