@@ -48,7 +48,6 @@ func (c *Client) GetNamespaces() ([]string, error) {
 }
 
 func (c *Client) GetSecrets(namespace string) ([]string, error) {
-	// TODO: only opaque secrets
 	cmd := c.Command("kubectl", "get", "secrets", "-n", namespace, "--field-selector", "type=Opaque", "-o", "jsonpath={.items[*].metadata.name}")
 	stdout := &bytes.Buffer{}
 	cmd.SetStdout(stdout)
