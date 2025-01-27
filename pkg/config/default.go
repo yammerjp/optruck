@@ -2,6 +2,8 @@ package config
 
 import "fmt"
 
+// TODO: test
+
 const defaultEnvFilePath = ".env"
 const defaultOutputFormat = "env"
 const defaultOutputPathOnEnv = ".env.1password"
@@ -11,25 +13,32 @@ func defaultOutputPathOnK8s(item string) string {
 }
 
 func (b *ConfigBuilder) SetDefaultIfEmpty() error {
+	if err := b.setDefaultActionIfNotSet(); err != nil {
+		return err
+	}
+	if err := b.setDefaultTargetIfNotSet(); err != nil {
+		return err
+	}
+
+	if err := b.setDefaultDataSourceIfNotSet(); err != nil {
+		return err
+	}
+
+	if err := b.setDefaultOutputIfNotSet(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *ConfigBuilder) setDefaultActionIfNotSet() error {
 	if !b.isUpload && !b.isTemplate && !b.isMirror {
 		b.isMirror = true
 	}
-	if b.envFile == "" && b.k8sSecret == "" {
-		b.envFile = defaultEnvFilePath
-	}
-	if b.k8sSecret != "" && b.k8sNamespace == "" {
-		return fmt.Errorf("k8s namespace is required when using k8s secret")
-	}
-	if b.outputFormat == "" {
-		b.outputFormat = defaultOutputFormat
-	}
-	if b.output == "" {
-		if b.outputFormat == "env" {
-			b.output = defaultOutputPathOnEnv
-		} else {
-			b.output = defaultOutputPathOnK8s(b.item)
-		}
-	}
+	return nil
+}
+
+func (b *ConfigBuilder) setDefaultTargetIfNotSet() error {
 	if b.account == "" {
 		// FIXME: not use op.Client directly in plg/config
 		// if account is not specified and exist only one account, use it
@@ -52,6 +61,31 @@ func (b *ConfigBuilder) SetDefaultIfEmpty() error {
 		}
 		if len(vaults) == 1 {
 			b.vault = vaults[0].Name
+		}
+	}
+	return nil
+}
+
+func (b *ConfigBuilder) setDefaultDataSourceIfNotSet() error {
+	if b.envFile == "" && b.k8sSecret == "" {
+		b.envFile = defaultEnvFilePath
+	}
+	return nil
+}
+
+func (b *ConfigBuilder) setDefaultOutputIfNotSet() error {
+	if !b.isUpload && b.outputFormat == "" {
+		if b.envFile != "" {
+			b.outputFormat = "env"
+		} else if b.k8sSecret != "" {
+			b.outputFormat = "k8s"
+		}
+	}
+	if b.output == "" {
+		if b.outputFormat == "env" {
+			b.output = defaultOutputPathOnEnv
+		} else if b.outputFormat == "k8s" {
+			b.output = defaultOutputPathOnK8s(b.item)
 		}
 	}
 	return nil

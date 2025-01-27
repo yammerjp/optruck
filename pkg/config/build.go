@@ -69,12 +69,6 @@ func (b *ConfigBuilder) buildDataSource() (datasources.Source, error) {
 
 func (b *ConfigBuilder) buildDest() (output.Dest, error) {
 	if b.outputFormat == "k8s" {
-		if b.k8sSecret == "" {
-			return nil, fmt.Errorf("k8s secret is required")
-		}
-		if b.k8sNamespace == "" {
-			return nil, fmt.Errorf("k8s namespace is required")
-		}
 		return &output.K8sSecretTemplateDest{
 			Path:       b.output,
 			Namespace:  b.k8sNamespace,
@@ -82,24 +76,9 @@ func (b *ConfigBuilder) buildDest() (output.Dest, error) {
 		}, nil
 	}
 
-	if b.outputFormat == "env" || b.envFile != "" {
-		return &output.EnvTemplateDest{
-			Path: b.output,
-		}, nil
-	}
-
-	if b.k8sSecret != "" {
-		if b.k8sNamespace == "" {
-			return nil, fmt.Errorf("k8s namespace is required")
-		}
-		return &output.K8sSecretTemplateDest{
-			Path:       b.output,
-			Namespace:  b.k8sNamespace,
-			SecretName: b.k8sSecret,
-		}, nil
-	}
-
-	return nil, fmt.Errorf("invalid output format: %s", b.outputFormat)
+	return &output.EnvTemplateDest{
+		Path: b.output,
+	}, nil
 }
 
 func (b *ConfigBuilder) BuildUpload() (actions.Action, func(), error) {
@@ -179,6 +158,10 @@ func (b *ConfigBuilder) BuildMirror() (actions.Action, func(), error) {
 }
 
 func (b *ConfigBuilder) Build() (actions.Action, func(), error) {
+	if err := b.validateCommon(); err != nil {
+		return nil, nil, err
+	}
+
 	if !b.isUpload && !b.isTemplate {
 		// mirror is default actions.Action
 		return b.BuildMirror()

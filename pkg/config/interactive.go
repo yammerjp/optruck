@@ -10,6 +10,7 @@ import (
 	"github.com/yammerjp/optruck/pkg/kube"
 )
 
+// TODO: test
 func (b *ConfigBuilder) SetConfigInteractively() error {
 	if err := b.validateSpecially(); err != nil {
 		// Validate early before entering interactive mode, even though we'll check again later
@@ -29,11 +30,69 @@ func (b *ConfigBuilder) SetConfigInteractively() error {
 	if err := b.setDestInteractively(); err != nil {
 		return err
 	}
-	// TODO: print result with command line option format
-	// ex:
-	//    The selected options are same as below.
-	//        $ optruck --upload --env-file .env --output .env.1password --vault Development --account my.1password.com --item my-item
+	if err := b.validateSpecially(); err != nil {
+		return err
+	}
+	cmds, err := b.buildResultCommand()
+	if err != nil {
+		return err
+	}
+	if err := b.SetDefaultIfEmpty(); err != nil {
+		return err
+	}
+	if err := b.validateCommon(); err != nil {
+		return err
+	}
+	fmt.Printf("The selected options are same as below.\n    $ %s\n", strings.Join(cmds, " "))
+	fmt.Println("Do you want to proceed? (y/n)")
+	prompt := promptui.Select{
+		Label: "Proceed?",
+		Items: []string{"y", "n"},
+	}
+	_, result, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	if result == "n" {
+		return fmt.Errorf("aborted")
+	}
 	return nil
+}
+
+func (b *ConfigBuilder) buildResultCommand() ([]string, error) {
+	cmds := []string{"optruck", b.item}
+	if b.isUpload {
+		cmds = append(cmds, "--upload")
+	}
+	if b.isTemplate {
+		cmds = append(cmds, "--template")
+	}
+	if b.isMirror {
+		cmds = append(cmds, "--mirror")
+	}
+	if b.envFile != "" {
+		cmds = append(cmds, "--env-file", b.envFile)
+	}
+	if b.output != "" {
+		cmds = append(cmds, "--output", b.output)
+	}
+	if b.vault != "" {
+		cmds = append(cmds, "--vault", b.vault)
+	}
+	if b.account != "" {
+		cmds = append(cmds, "--account", b.account)
+	}
+	if b.overwrite {
+		cmds = append(cmds, "--overwrite")
+	} else {
+		if b.overwriteTarget {
+			cmds = append(cmds, "--overwrite-target")
+		}
+		if b.overwriteTemplate {
+			cmds = append(cmds, "--overwrite-template")
+		}
+	}
+	return cmds, nil
 }
 
 func (b *ConfigBuilder) setActionInteractively() error {
@@ -136,10 +195,10 @@ func (b *ConfigBuilder) setDataSourceInteractively() error {
 }
 
 func (b *ConfigBuilder) setTargetInteractively() error {
-	opClient := b.buildOpTarget().BuildClient()
 
 	// TODO: create new function setAccountInteractively()
 	if b.account == "" {
+		opClient := b.buildOpTarget().BuildClient()
 		accounts, err := opClient.ListAccounts()
 		if err != nil {
 			return err
@@ -161,6 +220,8 @@ func (b *ConfigBuilder) setTargetInteractively() error {
 
 	// TODO: create new function setVaultInteractively()
 	if b.vault == "" {
+		// regenerate opClient with selected account
+		opClient := b.buildOpTarget().BuildClient()
 		vaults, err := opClient.ListVaults()
 		if err != nil {
 			return err
@@ -201,6 +262,8 @@ func (b *ConfigBuilder) setTargetInteractively() error {
 	}
 
 	if b.item == "" {
+		// regenerate opClient with selected account and vault
+		opClient := b.buildOpTarget().BuildClient()
 		items, err := opClient.ListItems()
 		if err != nil {
 			return err
@@ -210,7 +273,7 @@ func (b *ConfigBuilder) setTargetInteractively() error {
 			itemNames[i] = item.ItemName
 		}
 		if b.overwrite || b.overwriteTarget {
-			b.overwrite = true
+			// TODO: return item id if item name is duplicated
 			prompt := promptui.Select{
 				Label: "Select item name",
 				Items: itemNames,
@@ -221,7 +284,6 @@ func (b *ConfigBuilder) setTargetInteractively() error {
 			}
 			b.item = result
 		} else {
-			b.overwrite = false
 			defaultName := ""
 			// TODO: define default item name format
 			if b.envFile != "" {
