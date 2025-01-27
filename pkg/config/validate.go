@@ -1,6 +1,8 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // TODO: test
 
@@ -77,8 +79,6 @@ func (b *ConfigBuilder) validateTargetSpecially() error {
 		return fmt.Errorf("item must be less than 100 characters")
 	}
 	return nil
-	// TODO check the file does not exist --overwrite-target || --overwrite
-	// TODO check the file exists --overwrite-target || --overwrite
 }
 
 func (b *ConfigBuilder) validateTargetMissing() error {
@@ -174,8 +174,6 @@ func (b *ConfigBuilder) validateDestSpecially() error {
 	if b.outputFormat != "k8s" && b.outputFormat != "env" && b.outputFormat != "" {
 		return fmt.Errorf("invalid output format: %s", b.outputFormat)
 	}
-	// TODO check the file does not exist --overwrite-template || --overwrite
-	// TODO check the file exists --overwrite-target
 	return nil
 }
 

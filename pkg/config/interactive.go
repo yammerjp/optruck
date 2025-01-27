@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -135,112 +136,145 @@ func (b *ConfigBuilder) setDataSourceInteractively() error {
 	}
 	switch result {
 	case "env file":
-		// TODO: create new function setEnvFilePathInteractively()
-		prompt := promptui.Prompt{
-			Label:   "Enter env file path",
-			Default: defaultEnvFilePath,
-			Validate: func(input string) error {
-				if input == "" {
-					return fmt.Errorf("env file path is required")
-				}
-				if _, err := os.Stat(input); err != nil {
-					return fmt.Errorf("env file does not exist")
-				}
-				return nil
-			},
-		}
-		result, err := prompt.Run()
-		if err != nil {
+		if err := b.setEnvFilePathInteractively(); err != nil {
 			return err
 		}
-		b.envFile = result
 	case "k8s secret":
-		// TODO: create new function setK8sSecretInteractively()
-		kubeClient := kube.NewClient()
-		namespaces, err := kubeClient.GetNamespaces()
-		if err != nil {
+		if err := b.setK8sSecretInteractively(); err != nil {
 			return err
 		}
-
-		if b.k8sNamespace == "" {
-			prompt := promptui.Select{
-				Label: "Select kubernetes namespace",
-				Items: namespaces,
-			}
-			_, result, err := prompt.Run()
-			if err != nil {
-				return err
-			}
-			b.k8sNamespace = result
-		}
-
-		secrets, err := kubeClient.GetSecrets(b.k8sNamespace)
-		if err != nil {
-			return err
-		}
-		prompt = promptui.Select{
-			Label: fmt.Sprintf("Select kubernetes secret on namespace %s", b.k8sNamespace),
-			Items: secrets,
-		}
-		_, result, err = prompt.Run()
-		if err != nil {
-			return err
-		}
-		b.k8sSecret = result
 	default:
 		return fmt.Errorf("invalid data source: %s", result)
 	}
 	return nil
 }
 
+func (b *ConfigBuilder) setEnvFilePathInteractively() error {
+	prompt := promptui.Prompt{
+		Label:   "Enter env file path",
+		Default: defaultEnvFilePath,
+		Validate: func(input string) error {
+			if input == "" {
+				return fmt.Errorf("env file path is required")
+			}
+			if _, err := os.Stat(input); err != nil {
+				return fmt.Errorf("env file does not exist")
+			}
+			return nil
+		},
+	}
+	result, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	b.envFile = result
+	return nil
+}
+
+func (b *ConfigBuilder) setK8sSecretInteractively() error {
+	kubeClient := kube.NewClient()
+	namespaces, err := kubeClient.GetNamespaces()
+	if err != nil {
+		return err
+	}
+
+	if b.k8sNamespace == "" {
+		prompt := promptui.Select{
+			Label: "Select kubernetes namespace",
+			Items: namespaces,
+		}
+		_, result, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		b.k8sNamespace = result
+	}
+
+	secrets, err := kubeClient.GetSecrets(b.k8sNamespace)
+	if err != nil {
+		return err
+	}
+	prompt := promptui.Select{
+		Label: fmt.Sprintf("Select kubernetes secret on namespace %s", b.k8sNamespace),
+		Items: secrets,
+	}
+	_, result, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	b.k8sSecret = result
+	return nil
+}
+
 func (b *ConfigBuilder) setTargetInteractively() error {
+	if err := b.setAccountInteractively(); err != nil {
+		return err
+	}
+	if err := b.setVaultInteractively(); err != nil {
+		return err
+	}
+	if err := b.setItemInteractively(); err != nil {
+		return err
+	}
+	return nil
+}
 
-	// TODO: create new function setAccountInteractively()
-	if b.account == "" {
-		opClient := b.buildOpTarget().BuildClient()
-		accounts, err := opClient.ListAccounts()
-		if err != nil {
-			return err
-		}
-		accountNames := make([]string, len(accounts))
-		for i, account := range accounts {
-			accountNames[i] = account.URL
-		}
-		prompt := promptui.Select{
-			Label: "Select account",
-			Items: accountNames,
-		}
-		_, result, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-		b.account = result
+func (b *ConfigBuilder) setAccountInteractively() error {
+	if b.account != "" {
+		// already set
+		return nil
 	}
 
-	// TODO: create new function setVaultInteractively()
-	if b.vault == "" {
-		// regenerate opClient with selected account
-		opClient := b.buildOpTarget().BuildClient()
-		vaults, err := opClient.ListVaults()
-		if err != nil {
-			return err
-		}
-		vaultNames := make([]string, len(vaults))
-		for i, vault := range vaults {
-			vaultNames[i] = vault.Name
-		}
-		prompt := promptui.Select{
-			Label: "Select vault",
-			Items: vaultNames,
-		}
-		_, result, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-		b.vault = result
+	opClient := b.buildOpTarget().BuildClient()
+	accounts, err := opClient.ListAccounts()
+	if err != nil {
+		return err
+	}
+	accountNames := make([]string, len(accounts))
+	for i, account := range accounts {
+		accountNames[i] = account.URL
+	}
+	prompt := promptui.Select{
+		Label: "Select account",
+		Items: accountNames,
+	}
+	_, result, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	b.account = result
+	return nil
+}
+
+func (b *ConfigBuilder) setVaultInteractively() error {
+	if b.vault != "" {
+		// already set
+		return nil
 	}
 
-	// TODO: create new function setItemInteractively()
+	// regenerate opClient with selected account
+	opClient := b.buildOpTarget().BuildClient()
+	vaults, err := opClient.ListVaults()
+	if err != nil {
+		return err
+	}
+	vaultNames := make([]string, len(vaults))
+	for i, vault := range vaults {
+		vaultNames[i] = vault.Name
+	}
+	prompt := promptui.Select{
+		Label: "Select vault",
+		Items: vaultNames,
+	}
+	_, result, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	b.vault = result
+	return nil
+}
+
+func (b *ConfigBuilder) setItemInteractively() error {
 	if !b.overwriteTarget && !b.overwrite {
 		prompt := promptui.Select{
 			Label: "Select overwrite mode",
@@ -260,64 +294,67 @@ func (b *ConfigBuilder) setTargetInteractively() error {
 		}
 	}
 
-	if b.item == "" {
-		// regenerate opClient with selected account and vault
-		opClient := b.buildOpTarget().BuildClient()
-		items, err := opClient.ListItems()
+	if b.item != "" {
+		// already set
+		return nil
+	}
+
+	// regenerate opClient with selected account and vault
+	opClient := b.buildOpTarget().BuildClient()
+	items, err := opClient.ListItems()
+	if err != nil {
+		return err
+	}
+	itemNames := make([]string, len(items))
+	for i, item := range items {
+		itemNames[i] = item.ItemName
+	}
+	if b.overwrite || b.overwriteTarget {
+		// TODO: return item id if item name is duplicated
+		prompt := promptui.Select{
+			Label: "Select item name",
+			Items: itemNames,
+		}
+		_, result, err := prompt.Run()
 		if err != nil {
 			return err
 		}
-		itemNames := make([]string, len(items))
-		for i, item := range items {
-			itemNames[i] = item.ItemName
+		b.item = result
+	} else {
+		defaultName := ""
+		// TODO: define default item name format
+		if b.envFile != "" {
+			defaultName = fmt.Sprintf("dotenv_%s", filepath.Base(filepath.Dir(b.envFile)))
+		} else if b.k8sSecret != "" {
+			defaultName = fmt.Sprintf("kubernetes_secret_%s_%s", b.k8sNamespace, b.k8sSecret)
 		}
-		if b.overwrite || b.overwriteTarget {
-			// TODO: return item id if item name is duplicated
-			prompt := promptui.Select{
-				Label: "Select item name",
-				Items: itemNames,
-			}
-			_, result, err := prompt.Run()
-			if err != nil {
-				return err
-			}
-			b.item = result
-		} else {
-			defaultName := ""
-			// TODO: define default item name format
-			if b.envFile != "" {
-				defaultName = fmt.Sprintf("dotenv_%s", filepath.Base(filepath.Dir(b.envFile)))
-			} else if b.k8sSecret != "" {
-				defaultName = fmt.Sprintf("kubernetes_secret_%s_%s", b.k8sNamespace, b.k8sSecret)
-			}
-			prompt := promptui.Prompt{
-				Label:   "Enter item name",
-				Default: defaultName,
-				Validate: func(input string) error {
-					// TODO: define item name format
-					if input == "" {
-						return fmt.Errorf("item name is required")
+		prompt := promptui.Prompt{
+			Label:   "Enter item name",
+			Default: defaultName,
+			Validate: func(input string) error {
+				// TODO: define item name format
+				if input == "" {
+					return fmt.Errorf("item name is required")
+				}
+				if len(input) > 100 {
+					return fmt.Errorf("item name must be less than 100 characters")
+				}
+				if strings.Contains(input, " ") {
+					return fmt.Errorf("item name must not contain spaces")
+				}
+				for _, n := range itemNames {
+					if n == input {
+						return fmt.Errorf("item name must be unique")
 					}
-					if len(input) > 100 {
-						return fmt.Errorf("item name must be less than 100 characters")
-					}
-					if strings.Contains(input, " ") {
-						return fmt.Errorf("item name must not contain spaces")
-					}
-					for _, n := range itemNames {
-						if n == input {
-							return fmt.Errorf("item name must be unique")
-						}
-					}
-					return nil
-				},
-			}
-			result, err := prompt.Run()
-			if err != nil {
-				return err
-			}
-			b.item = result
+				}
+				return nil
+			},
 		}
+		result, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		b.item = result
 	}
 	return nil
 }
@@ -327,82 +364,117 @@ func (b *ConfigBuilder) setDestInteractively() error {
 		// upload action does not need dest
 		return nil
 	}
-
-	// TODO: create new function setOutputFormatInteractively()
-	// set format if not set
-	if b.isTemplate && b.outputFormat == "" {
-		// if upload or mirror, detect format from data source
-		prompt := promptui.Select{
-			Label: "Select output format",
-			Items: []string{"env", "k8s"},
-		}
-		_, result, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-		b.outputFormat = result
+	if err := b.setOutputFormatInteractively(); err != nil {
+		return err
+	}
+	if err := b.setOutputPathInteractively(); err != nil {
+		return err
 	}
 
-	// TODO: create new function setOutputPathInteractively()
-	defaultOutputPath := ""
+	return nil
+}
+
+func (b *ConfigBuilder) setOutputFormatInteractively() error {
+	if b.outputFormat != "" {
+		// already set
+		return nil
+	}
+
+	if b.isUpload {
+		// upload action does not need output format
+		return nil
+	}
+	if b.isMirror {
+		// datasource format is already specified
+		// set output format to the same as data source format
+		if b.envFile != "" {
+			b.outputFormat = "env"
+		} else if b.k8sSecret != "" {
+			b.outputFormat = "k8s"
+		}
+	}
+
+	prompt := promptui.Select{
+		Label: "Select output format",
+		Items: []string{"env", "k8s"},
+	}
+	_, result, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	b.outputFormat = result
+	return nil
+}
+
+func (b *ConfigBuilder) defaultOutputPath() string {
 	if b.outputFormat == "env" {
-		defaultOutputPath = defaultOutputPathOnEnv
+		return defaultOutputPathOnEnv
 	} else {
-		defaultOutputPath = defaultOutputPathOnK8s(b.item)
+		return defaultOutputPathOnK8s(b.item)
 	}
+}
 
-	// set output path if not set
-	if b.output == "" {
-		prompt := promptui.Prompt{
-			Label:   "Enter output path",
-			Default: defaultOutputPath,
-			Validate: func(input string) error {
-				if input == "" {
-					return fmt.Errorf("output path is required")
-				}
-				stat, err := os.Stat(input)
-				if err != nil {
-					if os.IsNotExist(err) {
-						return nil
-					}
-					return err
-				}
-				if stat.IsDir() {
-					return fmt.Errorf("output path is already created as a directory")
-				}
-				return nil
-			},
-		}
-		result, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-		b.output = result
-
-		stat, err := os.Stat(result)
-		if err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		if stat != nil && stat.IsDir() {
-			return fmt.Errorf("output path is already created as a directory")
-		}
-		if stat != nil && !stat.IsDir() {
-			if !b.overwrite && !b.overwriteTemplate {
-				// prompt to overwrite
-				prompt := promptui.Select{
-					Label: "Output path already exists. Do you want to overwrite?",
-					Items: []string{"overwrite", "abort"},
-				}
-				_, result, err := prompt.Run()
-				if err != nil {
-					return err
-				}
-				if result == "abort" {
-					return fmt.Errorf("aborted, overwrite does not allowed")
-				}
-				b.overwriteTemplate = true
+func (b *ConfigBuilder) setOutputPathInteractively() error {
+	if b.output != "" {
+		// already set
+		return nil
+	}
+	prompt := promptui.Prompt{
+		Label:   "Enter output path",
+		Default: b.defaultOutputPath(),
+		Validate: func(input string) error {
+			if input == "" {
+				return fmt.Errorf("output path is required")
 			}
-		}
+			stat, err := os.Stat(input)
+			if err != nil {
+				if os.IsNotExist(err) {
+					return nil
+				}
+				return err
+			}
+			if stat.IsDir() {
+				return fmt.Errorf("output path is already created as a directory")
+			}
+			return nil
+		},
 	}
+	result, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	b.output = result
+
+	stat, err := os.Stat(result)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if stat == nil {
+		return errors.New("output path is not a file")
+	}
+	if stat.IsDir() {
+		return errors.New("output path is already created as a directory")
+	}
+
+	if b.overwrite || b.overwriteTemplate {
+		// allow overwrite
+		return nil
+	}
+
+	confirmationPrompt := promptui.Select{
+		Label: "Output path already exists. Do you want to overwrite?",
+		Items: []string{"overwrite", "abort"},
+	}
+	_, result, err = confirmationPrompt.Run()
+	if err != nil {
+		return err
+	}
+	if result == "abort" {
+		return fmt.Errorf("aborted, overwrite does not allowed")
+	}
+	b.overwriteTemplate = true
 	return nil
 }
