@@ -22,19 +22,24 @@ func (b *ConfigBuilder) SetConfigInteractively() error {
 	if err := b.setActionInteractively(); err != nil {
 		return err
 	}
-	fmt.Println("action", b.isUpload, b.isTemplate, b.isMirror)
 	if err := b.setDataSourceInteractively(); err != nil {
 		return err
 	}
-	if err := b.setTargetInteractively(); err != nil {
+
+	if err := b.setTargetAccountInteractively(); err != nil {
 		return err
 	}
+	if err := b.setTargetVaultInteractively(); err != nil {
+		return err
+	}
+	if err := b.setTargetItemInteractively(); err != nil {
+		return err
+	}
+
 	if err := b.setDestInteractively(); err != nil {
 		return err
 	}
-	if err := b.validateSpecially(); err != nil {
-		return err
-	}
+
 	cmds, err := b.buildResultCommand()
 	if err != nil {
 		return err
@@ -45,6 +50,10 @@ func (b *ConfigBuilder) SetConfigInteractively() error {
 	if err := b.validateCommon(); err != nil {
 		return err
 	}
+	return b.confirmToProceed(cmds)
+}
+
+func (b *ConfigBuilder) confirmToProceed(cmds []string) error {
 	fmt.Printf("The selected options are same as below.\n    $ %s\n", strings.Join(cmds, " "))
 	fmt.Println("Do you want to proceed? (y/n)")
 	prompt := promptui.Select{
@@ -212,20 +221,7 @@ func (b *ConfigBuilder) setK8sSecretInteractively() error {
 	return nil
 }
 
-func (b *ConfigBuilder) setTargetInteractively() error {
-	if err := b.setAccountInteractively(); err != nil {
-		return err
-	}
-	if err := b.setVaultInteractively(); err != nil {
-		return err
-	}
-	if err := b.setItemInteractively(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (b *ConfigBuilder) setAccountInteractively() error {
+func (b *ConfigBuilder) setTargetAccountInteractively() error {
 	if b.account != "" {
 		// already set
 		return nil
@@ -252,7 +248,7 @@ func (b *ConfigBuilder) setAccountInteractively() error {
 	return nil
 }
 
-func (b *ConfigBuilder) setVaultInteractively() error {
+func (b *ConfigBuilder) setTargetVaultInteractively() error {
 	if b.vault != "" {
 		// already set
 		return nil
@@ -280,7 +276,7 @@ func (b *ConfigBuilder) setVaultInteractively() error {
 	return nil
 }
 
-func (b *ConfigBuilder) setItemInteractively() error {
+func (b *ConfigBuilder) setTargetItemInteractively() error {
 	if err := b.setItemOverwriteModeInteractively(); err != nil {
 		return err
 	}
