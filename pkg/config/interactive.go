@@ -71,7 +71,12 @@ func (b *ConfigBuilder) buildResultCommand() ([]string, error) {
 	if b.isMirror {
 		cmds = append(cmds, "--mirror")
 	}
-	if b.envFile != "" {
+	if b.k8sSecret != "" {
+		cmds = append(cmds, "--k8s-secret", b.k8sSecret)
+		if b.k8sNamespace != "default" {
+			cmds = append(cmds, "--k8s-namespace", b.k8sNamespace)
+		}
+	} else if b.envFile != defaultEnvFilePath {
 		cmds = append(cmds, "--env-file", b.envFile)
 	}
 	if b.output != "" {
