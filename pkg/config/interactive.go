@@ -392,6 +392,7 @@ func (b *ConfigBuilder) setOutputFormatInteractively() error {
 		} else if b.k8sSecret != "" {
 			b.outputFormat = "k8s"
 		}
+		return nil
 	}
 
 	prompt := promptui.Select{
@@ -446,14 +447,12 @@ func (b *ConfigBuilder) setOutputPathInteractively() error {
 	b.output = result
 
 	stat, err := os.Stat(result)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
+	if os.IsNotExist(err) {
+		// if output path does not exist, not need to overwrite
+		return nil
 	}
-	if stat == nil {
-		return errors.New("output path is not a file")
+	if err != nil {
+		return err
 	}
 	if stat.IsDir() {
 		return errors.New("output path is already created as a directory")
