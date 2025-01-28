@@ -119,3 +119,17 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 ## License
 
 [MIT](LICENSE)
+
+
+## TODO
+
+- [ ] Add tests for interactive mode
+- [ ] More descriptive error messages to help user
+- [ ] More user friendly interactive mode
+- [ ] Fix logging
+- [ ] Add tests for kube client
+- [ ] E2E testing (with dummy commands(kubectl, op))
+- [ ] Register kubernetes secret base64 decoded data as 1Password item and mark it as 'decoded'
+- [ ] Support more data source of kubernetes secret (not only type Opaque)
+- [ ] Allow to select a part of secret on .env file to upload
+- [ ] Add to check op cli and kubectl are installed
