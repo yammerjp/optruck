@@ -2,6 +2,8 @@ package optruck
 
 import (
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -17,6 +19,11 @@ func Run() {
 		kong.Help(helpPrinter),
 	)
 
+	logger, err := cli.buildLogger()
+	if err != nil {
+		ctx.Fatalf("%v", err)
+	}
+
 	// Handle version flag
 	if cli.Version {
 		fmt.Printf("optruck version %s\n", version)
@@ -31,8 +38,7 @@ func Run() {
 		WithK8sSecret(cli.K8sSecret).
 		WithK8sNamespace(cli.K8sNamespace).
 		WithOutput(cli.Output).
-		WithOverwrite(cli.Overwrite).
-		WithLogLevel(cli.LogLevel)
+		WithOverwrite(cli.Overwrite)
 
 	if cli.Interactive {
 		err := builder.SetConfigInteractively()
@@ -40,12 +46,11 @@ func Run() {
 			ctx.Fatalf("%v", err)
 		}
 	}
-	err := builder.SetDefaultIfEmpty()
-	if err != nil {
+	if err := builder.SetDefaultIfEmpty(); err != nil {
 		ctx.Fatalf("%v", err)
 	}
 
-	action, err := builder.Build()
+	action, err := builder.Build(logger)
 	if err != nil {
 		ctx.Fatalf("%v", err)
 	}
@@ -53,4 +58,28 @@ func Run() {
 	if err := action.Run(); err != nil {
 		ctx.Fatalf("%v", err)
 	}
+}
+
+func (cli *CLI) buildLogger() (*slog.Logger, error) {
+	var logLevel slog.Level
+	var f io.Writer
+	switch cli.LogLevel {
+	case "debug":
+		logLevel = slog.LevelDebug
+		f = os.Stderr
+	case "info":
+		logLevel = slog.LevelInfo
+		f = os.Stderr
+	case "warn":
+		logLevel = slog.LevelWarn
+		f = os.Stderr
+	case "error":
+		logLevel = slog.LevelError
+		f = os.Stderr
+	default:
+		logLevel = slog.LevelInfo
+		f = io.Discard
+	}
+
+	return slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel})), nil
 }
