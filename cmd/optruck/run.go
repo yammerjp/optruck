@@ -2,7 +2,6 @@ package optruck
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -16,6 +15,9 @@ func Run() {
 		kong.Description("A CLI tool for managing secrets and creating templates with 1Password."),
 		kong.UsageOnError(),
 		kong.Help(helpPrinter),
+		kong.Vars{
+			"version": fmt.Sprintf("optruck version %s", version),
+		},
 	)
 	if err := cli.Run(); err != nil {
 		ctx.Fatalf("%v", err)
@@ -23,12 +25,6 @@ func Run() {
 }
 
 func (cli *CLI) Run() error {
-	// Handle version flag
-	if cli.Version {
-		fmt.Printf("optruck version %s\n", version)
-		os.Exit(0)
-	}
-
 	if err := cli.validateConflictOptions(); err != nil {
 		// Validate early before entering interactive mode, even though we'll check again later
 		return err

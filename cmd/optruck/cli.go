@@ -95,6 +95,6 @@ type CLI struct {
 	Interactive bool   `name:"interactive" help:"Enable interactive mode for selecting the item, account, and vault." short:"i"`
 
 	// Misc
-	Version  bool   `name:"version" help:"Show the version of optruck."`
-	LogLevel string `name:"log-level" help:"Set the log level (debug|info|warn|error)."`
+	Version  kong.VersionFlag `short:"v" help:"Show the version of optruck."`
+	LogLevel string           `name:"log-level" help:"Set the log level (debug|info|warn|error)."`
 }
