@@ -15,9 +15,6 @@ func Run() {
 		kong.Description("A CLI tool for managing secrets and creating templates with 1Password."),
 		kong.UsageOnError(),
 		kong.Help(helpPrinter),
-		kong.Vars{
-			"version": fmt.Sprintf("optruck version %s", version),
-		},
 	)
 	if err := cli.Run(); err != nil {
 		ctx.Fatalf("%v", err)

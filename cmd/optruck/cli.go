@@ -6,8 +6,6 @@ import (
 	"github.com/alecthomas/kong"
 )
 
-var version = "0.1.0"
-
 func helpPrinter(options kong.HelpOptions, ctx *kong.Context) error {
 	fmt.Print(`optruck - A CLI tool for managing secrets and creating templates with 1Password.
 
@@ -95,6 +93,6 @@ type CLI struct {
 	Interactive bool   `name:"interactive" help:"Enable interactive mode for selecting the item, account, and vault." short:"i"`
 
 	// Misc
-	Version  kong.VersionFlag `short:"v" help:"Show the version of optruck."`
-	LogLevel string           `name:"log-level" help:"Set the log level (debug|info|warn|error)."`
+	Version  VersionFlag `short:"v" help:"Show the version of optruck."`
+	LogLevel string      `name:"log-level" help:"Set the log level (debug|info|warn|error)."`
 }
