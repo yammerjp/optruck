@@ -5,12 +5,6 @@ import "fmt"
 // TODO: test
 
 const defaultEnvFilePath = ".env"
-const defaultOutputFormat = "env"
-const defaultOutputPathOnEnv = ".env.1password"
-
-func defaultOutputPathOnK8s(item string) string {
-	return fmt.Sprintf("%s-secret.yaml.1password", item)
-}
 
 func (b *ConfigBuilder) SetDefaultIfEmpty() error {
 	if err := b.setDefaultTargetIfNotSet(); err != nil {
@@ -63,13 +57,16 @@ func (b *ConfigBuilder) setDefaultDataSourceIfNotSet() error {
 	return nil
 }
 
+func defaultOutputPath(isK8s bool, itemName string) string {
+	if isK8s {
+		return fmt.Sprintf("%s-secret.yaml.1password", itemName)
+	}
+	return ".env.1password"
+}
+
 func (b *ConfigBuilder) setDefaultOutputIfNotSet() error {
 	if b.output == "" {
-		if b.envFile != "" {
-			b.output = defaultOutputPathOnEnv
-		} else if b.k8sSecret != "" {
-			b.output = defaultOutputPathOnK8s(b.item)
-		}
+		b.output = defaultOutputPath(b.k8sSecret != "", b.item)
 	}
 	return nil
 }

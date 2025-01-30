@@ -9,8 +9,6 @@ type ConfigBuilder struct {
 	k8sNamespace string
 	output       string
 	overwrite    bool
-	logLevel     string
-	logFile      string
 }
 
 func NewConfigBuilder() *ConfigBuilder {
@@ -54,15 +52,5 @@ func (b *ConfigBuilder) WithOutput(output string) *ConfigBuilder {
 
 func (b *ConfigBuilder) WithOverwrite(overwrite bool) *ConfigBuilder {
 	b.overwrite = overwrite
-	return b
-}
-
-func (b *ConfigBuilder) WithLogLevel(logLevel string) *ConfigBuilder {
-	b.logLevel = logLevel
-	return b
-}
-
-func (b *ConfigBuilder) WithLogFile(logFile string) *ConfigBuilder {
-	b.logFile = logFile
 	return b
 }

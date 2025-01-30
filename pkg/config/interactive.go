@@ -321,57 +321,35 @@ func (b *ConfigBuilder) setItemByInput(currentItems []op.SecretReference) error 
 	return nil
 }
 
-func (b *ConfigBuilder) setDestInteractively() error {
-	if b.envFile != "" {
-		b.output = defaultOutputPathOnEnv
-	} else if b.k8sSecret != "" {
-		b.output = defaultOutputPathOnK8s(b.item)
+func validateOutputPath(path string) error {
+	stat, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if stat.IsDir() {
+		return errors.New("output path is already created as a directory")
 	}
 	return nil
 }
 
-func (b *ConfigBuilder) setOutputPathInteractively() error {
+func (b *ConfigBuilder) setDestInteractively() error {
 	if b.output != "" {
 		// already set
 		return nil
 	}
 	prompt := promptui.Prompt{
-		Label:   "Enter output path",
-		Default: b.output,
-		Validate: func(input string) error {
-			if input == "" {
-				return fmt.Errorf("output path is required")
-			}
-			stat, err := os.Stat(input)
-			if err != nil {
-				if os.IsNotExist(err) {
-					return nil
-				}
-				return err
-			}
-			if stat.IsDir() {
-				return fmt.Errorf("output path is already created as a directory")
-			}
-			return nil
-		},
+		Label:    "Enter output path",
+		Default:  defaultOutputPath(b.k8sSecret != "", b.item),
+		Validate: validateOutputPath,
 	}
 	result, err := prompt.Run()
 	if err != nil {
 		return err
 	}
 	b.output = result
-
-	stat, err := os.Stat(result)
-	if os.IsNotExist(err) {
-		// if output path does not exist, not need to overwrite
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	if stat.IsDir() {
-		return errors.New("output path is already created as a directory")
-	}
 
 	if b.overwrite {
 		// allow overwrite
