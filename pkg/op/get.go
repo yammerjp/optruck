@@ -12,12 +12,8 @@ import (
 var ErrMoreThanOneItemMatches = errors.New("more than one item matches")
 var ErrItemNotFound = errors.New("item not found")
 
-func (c *Client) GetItem() (*SecretReference, error) {
-	cmd := c.BuildCommand(CommandOptions{
-		AddAccount: true,
-		AddVault:   true,
-		Args:       []string{"item", "get", c.Target.ItemName},
-	})
+func (c *ItemClient) GetItem() (*SecretReference, error) {
+	cmd := c.BuildCommand("item", "get", c.ItemName)
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)

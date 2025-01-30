@@ -100,29 +100,6 @@ func TestListItems(t *testing.T) {
 			},
 			wantArgs: []string{"item", "list", "--account", "test-account", "--vault", "test-vault-name", "--format", "json"},
 		},
-		{
-			name:           "without account and vault",
-			mockStdout:     mockListStdoutSuccess,
-			mockExitStatus: 0,
-			wantErr:        nil,
-			wantRefs: []SecretReference{
-				{
-					VaultName:   "test-vault-name",
-					VaultID:     "test-vault-id",
-					ItemName:    "test-item-1",
-					ItemID:      "test-id-1",
-					FieldLabels: []string{"FOO", "BAR"},
-				},
-				{
-					VaultName:   "test-vault-name",
-					VaultID:     "test-vault-id",
-					ItemName:    "test-item-2",
-					ItemID:      "test-id-2",
-					FieldLabels: []string{"BAZ"},
-				},
-			},
-			wantArgs: []string{"item", "list", "--format", "json"},
-		},
 	}
 
 	for _, tt := range tests {
@@ -164,13 +141,7 @@ func TestListItems(t *testing.T) {
 				},
 			}
 
-			client := &Client{
-				exec: fakeExec,
-				Target: Target{
-					Account: tt.account,
-					Vault:   tt.vault,
-				},
-			}
+			client := NewVaultClient(tt.account, tt.vault, fakeExec)
 
 			got, err := client.ListItems()
 			if err != tt.wantErr {

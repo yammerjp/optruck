@@ -96,9 +96,7 @@ func TestListAccounts(t *testing.T) {
 				},
 			}
 
-			client := &Client{
-				exec: fakeExec,
-			}
+			client := NewExecutableClient(fakeExec)
 
 			got, err := client.ListAccounts()
 			if (err != nil) != tt.wantErr {

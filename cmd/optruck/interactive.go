@@ -124,11 +124,7 @@ func (cli *CLI) setTargetAccountInteractively() error {
 		return nil
 	}
 
-	opTarget, err := cli.buildOpTarget(false)
-	if err != nil {
-		return err
-	}
-	accounts, err := opTarget.BuildClient().ListAccounts()
+	accounts, err := op.NewExecutableClient(nil).ListAccounts()
 	if err != nil {
 		return err
 	}
@@ -154,12 +150,7 @@ func (cli *CLI) setTargetVaultInteractively() error {
 		return nil
 	}
 
-	// regenerate opClient with selected account
-	opTarget, err := cli.buildOpTarget(false)
-	if err != nil {
-		return err
-	}
-	vaults, err := opTarget.BuildClient().ListVaults()
+	vaults, err := op.NewAccountClient(cli.Account, nil).ListVaults()
 	if err != nil {
 		return err
 	}
@@ -197,11 +188,7 @@ func (cli *CLI) setTargetItemInteractively() error {
 		return nil
 	}
 
-	opTarget, err := cli.buildOpTarget(false)
-	if err != nil {
-		return err
-	}
-	items, err := opTarget.BuildClient().ListItems()
+	items, err := op.NewVaultClient(cli.Account, cli.Vault, nil).ListItems()
 	if err != nil {
 		return err
 	}

@@ -37,7 +37,7 @@ func (cli *CLI) buildLogger() *slog.Logger {
 	return slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel}))
 }
 
-func (cli *CLI) buildOpTarget(strict bool) (*op.Target, error) {
+func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 	if strict {
 		if cli.Account == "" {
 			return nil, fmt.Errorf("--account is required")
@@ -50,11 +50,7 @@ func (cli *CLI) buildOpTarget(strict bool) (*op.Target, error) {
 		}
 	}
 
-	return &op.Target{
-		Account:  cli.Account,
-		Vault:    cli.Vault,
-		ItemName: cli.Item,
-	}, nil
+	return op.NewItemClient(cli.Account, cli.Vault, cli.Item, nil), nil
 }
 
 func (cli *CLI) buildDataSource() (datasources.Source, error) {
@@ -99,16 +95,16 @@ func (cli *CLI) Build() (actions.Action, error) {
 		return nil, err
 	}
 
-	opTarget, err := cli.buildOpTarget(true)
+	opItemClient, err := cli.buildOpItemClient(true)
 	if err != nil {
 		return nil, err
 	}
 
 	return &actions.MirrorConfig{
-		Logger:     cli.buildLogger(),
-		Target:     *opTarget,
-		DataSource: ds,
-		Dest:       dest,
-		Overwrite:  cli.Overwrite,
+		Logger:       cli.buildLogger(),
+		OpItemClient: *opItemClient,
+		DataSource:   ds,
+		Dest:         dest,
+		Overwrite:    cli.Overwrite,
 	}, nil
 }

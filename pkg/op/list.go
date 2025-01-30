@@ -5,12 +5,8 @@ import (
 	"encoding/json"
 )
 
-func (c *Client) ListItems() ([]SecretReference, error) {
-	cmd := c.BuildCommand(CommandOptions{
-		AddAccount: true,
-		AddVault:   true,
-		Args:       []string{"item", "list"},
-	})
+func (c *VaultClient) ListItems() ([]SecretReference, error) {
+	cmd := c.BuildCommand("item", "list")
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)
@@ -31,7 +27,7 @@ func (c *Client) ListItems() ([]SecretReference, error) {
 	return refs, nil
 }
 
-func (c *Client) FilterItems(filter string) ([]SecretReference, error) {
+func (c *VaultClient) FilterItems(itemSpecifier string) ([]SecretReference, error) {
 	refs, err := c.ListItems()
 	if err != nil {
 		return nil, err
@@ -39,7 +35,7 @@ func (c *Client) FilterItems(filter string) ([]SecretReference, error) {
 
 	filtered := make([]SecretReference, 0)
 	for _, ref := range refs {
-		if c.Target.ItemName == ref.ItemName || c.Target.ItemName == ref.ItemID {
+		if itemSpecifier == ref.ItemName || itemSpecifier == ref.ItemID {
 			filtered = append(filtered, ref)
 		}
 	}

@@ -149,26 +149,6 @@ func TestEditItem(t *testing.T) {
 			wantStdin: `{"fields":[{"id":"FOO","type":"CONCEALED","label":"FOO","value":"bar"},{"id":"BAR","type":"CONCEALED","label":"BAR","value":"baz"}]}`,
 		},
 		{
-			name:     "without account and vault",
-			itemName: "test-item",
-			envPairs: map[string]string{
-				"FOO": "bar",
-				"BAR": "baz",
-			},
-			mockStdout:     mockEditStdoutSuccess,
-			mockExitStatus: 0,
-			wantErr:        nil,
-			wantRef: &SecretReference{
-				VaultName:   "test-vault-name",
-				VaultID:     "test-vault-id",
-				ItemName:    "test-item",
-				ItemID:      "test-id",
-				FieldLabels: []string{"FOO", "BAR"},
-			},
-			wantArgs:  []string{"item", "edit", "test-item", "--format", "json"},
-			wantStdin: `{"fields":[{"id":"FOO","type":"CONCEALED","label":"FOO","value":"bar"},{"id":"BAR","type":"CONCEALED","label":"BAR","value":"baz"}]}`,
-		},
-		{
 			name:     "verify exact json",
 			itemName: "test-item",
 			account:  "test-account",
@@ -340,14 +320,7 @@ func TestEditItem(t *testing.T) {
 				},
 			}
 
-			client := &Client{
-				exec: fakeExec,
-				Target: Target{
-					Account:  tt.account,
-					Vault:    tt.vault,
-					ItemName: tt.itemName,
-				},
-			}
+			client := NewItemClient(tt.account, tt.vault, tt.itemName, fakeExec)
 
 			got, err := client.EditItem(tt.envPairs)
 			if err != tt.wantErr {

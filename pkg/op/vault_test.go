@@ -55,24 +55,6 @@ func TestListVaults(t *testing.T) {
 			wantErr:        true,
 			wantArgs:       []string{"vault", "list", "--account", "test-account", "--format", "json"},
 		},
-		{
-			name:           "without account",
-			account:        "",
-			mockStdout:     mockVaultListSuccess,
-			mockExitStatus: 0,
-			wantErr:        false,
-			wantVaults: []Vault{
-				{
-					ID:             "test-vault-id",
-					Name:           "test-vault",
-					ContentVersion: 505,
-					CreatedAt:      "2022-09-04T08:17:14Z",
-					UpdatedAt:      "2025-01-25T05:36:11Z",
-					Items:          300,
-				},
-			},
-			wantArgs: []string{"vault", "list", "--format", "json"},
-		},
 	}
 
 	for _, tt := range tests {
@@ -114,12 +96,7 @@ func TestListVaults(t *testing.T) {
 				},
 			}
 
-			client := &Client{
-				exec: fakeExec,
-				Target: Target{
-					Account: tt.account,
-				},
-			}
+			client := NewAccountClient(tt.account, fakeExec)
 
 			got, err := client.ListVaults()
 			if (err != nil) != tt.wantErr {

@@ -9,17 +9,17 @@ import (
 var ErrMoreThanOneItemFound = errors.New("more than one item found, please specify another item name")
 var ErrItemAlreadyExists = errors.New("item already exists, use --overwrite to update")
 
-func (c *Client) UploadItem(envPairs map[string]string, overwrite bool) (*SecretReference, error) {
-	refs, err := c.FilterItems(c.Target.ItemName)
+func (c *ItemClient) UploadItem(envPairs map[string]string, overwrite bool) (*SecretReference, error) {
+	refs, err := c.FilterItems(c.ItemName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter items: %w", err)
 	}
 	if len(refs) == 0 {
-		slog.Debug("item not found, creating new item", "item", c.Target.ItemName)
+		slog.Debug("item not found, creating new item", "item", c.ItemName)
 		return c.CreateItem(envPairs)
 	}
 	if len(refs) == 1 {
-		slog.Debug("item found, updating existing item", "item", c.Target.ItemName)
+		slog.Debug("item found, updating existing item", "item", c.ItemName)
 		if !overwrite {
 			return nil, ErrItemAlreadyExists
 		}

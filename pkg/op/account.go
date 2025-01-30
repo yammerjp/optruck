@@ -12,12 +12,8 @@ type Account struct {
 	AccountUUID string `json:"account_uuid"`
 }
 
-func (c *Client) ListAccounts() ([]Account, error) {
-	cmd := c.BuildCommand(CommandOptions{
-		AddAccount: false,
-		AddVault:   false,
-		Args:       []string{"account", "list"},
-	})
+func (c *ExecutableClient) ListAccounts() ([]Account, error) {
+	cmd := c.BuildCommand("account", "list")
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)

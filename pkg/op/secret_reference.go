@@ -49,7 +49,7 @@ func (sr *SecretReference) GetFieldRefs() []FieldRef {
 	return ret
 }
 
-func (c *Client) BuildSecretReference(resp ItemResponse) *SecretReference {
+func (c *AccountClient) BuildSecretReference(resp ItemResponse) *SecretReference {
 	fieldLabels := []string{}
 	for _, field := range resp.Fields {
 		if field.Purpose == "" {
@@ -57,7 +57,7 @@ func (c *Client) BuildSecretReference(resp ItemResponse) *SecretReference {
 		}
 	}
 	return &SecretReference{
-		Account:     c.Target.Account,
+		Account:     c.Account,
 		VaultName:   resp.Vault.Name,
 		VaultID:     resp.Vault.ID,
 		ItemName:    resp.Title,

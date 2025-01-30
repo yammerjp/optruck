@@ -14,12 +14,8 @@ type Vault struct {
 	Items          int    `json:"items"`
 }
 
-func (c *Client) ListVaults() ([]Vault, error) {
-	cmd := c.BuildCommand(CommandOptions{
-		AddAccount: true,
-		AddVault:   false,
-		Args:       []string{"vault", "list"},
-	})
+func (c *AccountClient) ListVaults() ([]Vault, error) {
+	cmd := c.BuildCommand("vault", "list")
 	stdoutBuffer := bytes.NewBuffer(nil)
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd.SetStdout(stdoutBuffer)

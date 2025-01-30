@@ -102,26 +102,6 @@ func TestCreateItem(t *testing.T) {
 			wantStdin: `{"Title":"test-item","Category":"LOGIN","Fields":[{"ID":"BAR","Type":"CONCEALED","Purpose":"","Label":"BAR","Value":"baz"},{"ID":"FOO","Type":"CONCEALED","Purpose":"","Label":"FOO","Value":"bar"}]}`,
 		},
 		{
-			name:     "without account and vault",
-			itemName: "test-item",
-			envPairs: map[string]string{
-				"FOO": "bar",
-				"BAR": "baz",
-			},
-			mockStdout:     mockCreateStdoutSuccess,
-			mockExitStatus: 0,
-			wantErr:        nil,
-			wantRef: &SecretReference{
-				VaultName:   "test-vault-name",
-				VaultID:     "test-vault-id",
-				ItemName:    "test-item",
-				ItemID:      "test-id",
-				FieldLabels: []string{"FOO", "BAR"},
-			},
-			wantArgs:  []string{"item", "create", "--format", "json"},
-			wantStdin: `{"Title":"test-item","Category":"LOGIN","Fields":[{"ID":"BAR","Type":"CONCEALED","Purpose":"","Label":"BAR","Value":"baz"},{"ID":"FOO","Type":"CONCEALED","Purpose":"","Label":"FOO","Value":"bar"}]}`,
-		},
-		{
 			name:     "verify exact json",
 			itemName: "test-item",
 			account:  "test-account",
@@ -208,14 +188,7 @@ func TestCreateItem(t *testing.T) {
 				},
 			}
 
-			client := &Client{
-				exec: fakeExec,
-				Target: Target{
-					Account:  tt.account,
-					Vault:    tt.vault,
-					ItemName: tt.itemName,
-				},
-			}
+			client := NewItemClient(tt.account, tt.vault, tt.itemName, fakeExec)
 
 			got, err := client.CreateItem(tt.envPairs)
 			if err != tt.wantErr {

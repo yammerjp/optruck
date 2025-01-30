@@ -9,15 +9,15 @@ import (
 )
 
 type MirrorConfig struct {
-	Logger     *slog.Logger
-	Target     op.Target
-	DataSource datasources.Source
-	Dest       output.Dest
-	Overwrite  bool
+	Logger       *slog.Logger
+	OpItemClient op.ItemClient
+	DataSource   datasources.Source
+	Dest         output.Dest
+	Overwrite    bool
 }
 
 func (config MirrorConfig) Run() error {
-	config.Logger.Debug("Starting mirror action for item", "item", config.Target.ItemName)
+	config.Logger.Debug("Starting mirror action for item", "item", config.OpItemClient.ItemName)
 
 	secrets, err := config.DataSource.FetchSecrets()
 	if err != nil {
@@ -26,7 +26,7 @@ func (config MirrorConfig) Run() error {
 	}
 	config.Logger.Debug("Fetched secrets from data source", "count", len(secrets))
 
-	secretsResp, err := config.Target.BuildClient().UploadItem(secrets, config.Overwrite)
+	secretsResp, err := config.OpItemClient.UploadItem(secrets, config.Overwrite)
 	if err != nil {
 		config.Logger.Error("failed to upload secrets to 1Password", "error", err)
 		return err

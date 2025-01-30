@@ -121,21 +121,6 @@ func TestGetItem(t *testing.T) {
 			wantErr:        ErrMoreThanOneItemMatches,
 			wantArgs:       []string{"item", "get", "ambiguous", "--account", "test-account", "--vault", "test-vault-name", "--format", "json"},
 		},
-		{
-			name:           "without account and vault",
-			itemName:       "test-item",
-			mockStdout:     mockStdoutSuccess,
-			mockExitStatus: 0,
-			wantErr:        nil,
-			wantRef: &SecretReference{
-				VaultName:   "test-vault-name",
-				VaultID:     "test-vault-id",
-				ItemName:    "test-item",
-				ItemID:      "test-id",
-				FieldLabels: []string{"FOO", "BAR"},
-			},
-			wantArgs: []string{"item", "get", "test-item", "--format", "json"},
-		},
 	}
 
 	for _, tt := range tests {
@@ -177,14 +162,7 @@ func TestGetItem(t *testing.T) {
 				},
 			}
 
-			client := &Client{
-				exec: fakeExec,
-				Target: Target{
-					Account:  tt.account,
-					Vault:    tt.vault,
-					ItemName: tt.itemName,
-				},
-			}
+			client := NewItemClient(tt.account, tt.vault, tt.itemName, fakeExec)
 
 			got, err := client.GetItem()
 			if err != tt.wantErr {

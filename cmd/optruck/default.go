@@ -1,6 +1,10 @@
 package optruck
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/yammerjp/optruck/pkg/op"
+)
 
 const (
 	defaultEnvFilePath = ".env"
@@ -24,13 +28,8 @@ func (cli *CLI) SetDefaultIfEmpty() error {
 
 func (cli *CLI) setDefaultTargetIfNotSet() error {
 	if cli.Account == "" {
-		// FIXME: not use op.Client directly in plg/config
 		// if account is not specified and exist only one account, use it
-		opTarget, err := cli.buildOpTarget(false)
-		if err != nil {
-			return err
-		}
-		accounts, err := opTarget.BuildClient().ListAccounts()
+		accounts, err := op.NewExecutableClient(nil).ListAccounts()
 		if err != nil {
 			return fmt.Errorf("failed to list accounts: %w", err)
 		}
@@ -39,13 +38,8 @@ func (cli *CLI) setDefaultTargetIfNotSet() error {
 		}
 	}
 	if cli.Vault == "" {
-		// FIXME: not use op.Client directly in plg/config
 		// if vault is not specified and exist only one vault, use it
-		opTarget, err := cli.buildOpTarget(false)
-		if err != nil {
-			return err
-		}
-		vaults, err := opTarget.BuildClient().ListVaults()
+		vaults, err := op.NewAccountClient(cli.Account, nil).ListVaults()
 		if err != nil {
 			return fmt.Errorf("failed to list vaults: %w", err)
 		}

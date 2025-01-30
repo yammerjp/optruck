@@ -18,7 +18,7 @@ type ItemEditRequestField struct {
 	Value string `json:"value"`
 }
 
-func (c *Client) EditItem(envPairs map[string]string) (*SecretReference, error) {
+func (c *ItemClient) EditItem(envPairs map[string]string) (*SecretReference, error) {
 	req := ItemEditRequest{
 		Fields: make([]ItemEditRequestField, 0, len(envPairs)),
 	}
@@ -46,11 +46,7 @@ func (c *Client) EditItem(envPairs map[string]string) (*SecretReference, error) 
 	}
 
 	var stdout bytes.Buffer
-	cmd := c.BuildCommand(CommandOptions{
-		AddAccount: true,
-		AddVault:   true,
-		Args:       []string{"item", "edit", c.Target.ItemName},
-	})
+	cmd := c.BuildCommand("item", "edit", c.ItemName)
 	cmd.SetStdin(bytes.NewBuffer(reqStr))
 	cmd.SetStdout(&stdout)
 	cmd.SetStderr(os.Stderr)

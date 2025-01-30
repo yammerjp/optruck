@@ -21,9 +21,9 @@ type ItemCreateRequestField struct {
 	Value   string
 }
 
-func (c *Client) CreateItem(envPairs map[string]string) (*SecretReference, error) {
+func (c *ItemClient) CreateItem(envPairs map[string]string) (*SecretReference, error) {
 	req := ItemCreateRequest{
-		Title:    c.Target.ItemName,
+		Title:    c.ItemName,
 		Category: "LOGIN",
 		Fields:   make([]ItemCreateRequestField, 0, len(envPairs)),
 	}
@@ -50,11 +50,7 @@ func (c *Client) CreateItem(envPairs map[string]string) (*SecretReference, error
 		return nil, err
 	}
 
-	cmd := c.BuildCommand(CommandOptions{
-		AddAccount: true,
-		AddVault:   true,
-		Args:       []string{"item", "create"},
-	})
+	cmd := c.BuildCommand("item", "create")
 	cmd.SetStdin(bytes.NewBuffer(reqStr))
 	var stdout bytes.Buffer
 	cmd.SetStdout(&stdout)
