@@ -13,9 +13,6 @@ func defaultOutputPathOnK8s(item string) string {
 }
 
 func (b *ConfigBuilder) SetDefaultIfEmpty() error {
-	if err := b.setDefaultActionIfNotSet(); err != nil {
-		return err
-	}
 	if err := b.setDefaultTargetIfNotSet(); err != nil {
 		return err
 	}
@@ -28,13 +25,6 @@ func (b *ConfigBuilder) SetDefaultIfEmpty() error {
 		return err
 	}
 
-	return nil
-}
-
-func (b *ConfigBuilder) setDefaultActionIfNotSet() error {
-	if !b.isUpload && !b.isTemplate && !b.isMirror {
-		b.isMirror = true
-	}
 	return nil
 }
 
@@ -74,17 +64,10 @@ func (b *ConfigBuilder) setDefaultDataSourceIfNotSet() error {
 }
 
 func (b *ConfigBuilder) setDefaultOutputIfNotSet() error {
-	if !b.isUpload && b.outputFormat == "" {
-		if b.envFile != "" {
-			b.outputFormat = "env"
-		} else if b.k8sSecret != "" {
-			b.outputFormat = "k8s"
-		}
-	}
 	if b.output == "" {
-		if b.outputFormat == "env" {
+		if b.envFile != "" {
 			b.output = defaultOutputPathOnEnv
-		} else if b.outputFormat == "k8s" {
+		} else if b.k8sSecret != "" {
 			b.output = defaultOutputPathOnK8s(b.item)
 		}
 	}
