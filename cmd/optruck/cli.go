@@ -2,10 +2,8 @@ package optruck
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/yammerjp/optruck/pkg/config"
 )
 
 var version = "0.1.0"
@@ -40,7 +38,6 @@ General Options:
   --interactive         Enable interactive mode for selecting the item, account, and vault.
                         In this mode, <item> is optional.
   --log-level <level>   Set the log level (debug|info|warn|error). Defaults to "info".
-  --log-output <path>   Set the log output (<file path>). If not specified, no logging is done.
   -h, --help            Show help for optruck.
   --version            Show the version of optruck.
 
@@ -99,52 +96,5 @@ type CLI struct {
 
 	// Misc
 	Version  bool   `name:"version" help:"Show the version of optruck."`
-	LogLevel string `name:"log-level" help:"Set the log level (debug|info|warn|error)." enum:"debug,info,warn,error" default:"info"`
-}
-
-func Run() {
-	cli := CLI{}
-	ctx := kong.Parse(&cli,
-		kong.Name("optruck"),
-		kong.Description("A CLI tool for managing secrets and creating templates with 1Password."),
-		kong.UsageOnError(),
-		kong.Help(helpPrinter),
-	)
-
-	// Handle version flag
-	if cli.Version {
-		fmt.Printf("optruck version %s\n", version)
-		os.Exit(0)
-	}
-
-	builder := config.NewConfigBuilder().
-		WithItem(cli.Item).
-		WithVault(cli.Vault).
-		WithAccount(cli.Account).
-		WithEnvFile(cli.EnvFile).
-		WithK8sSecret(cli.K8sSecret).
-		WithK8sNamespace(cli.K8sNamespace).
-		WithOutput(cli.Output).
-		WithOverwrite(cli.Overwrite).
-		WithLogLevel(cli.LogLevel)
-
-	if cli.Interactive {
-		err := builder.SetConfigInteractively()
-		if err != nil {
-			ctx.Fatalf("%v", err)
-		}
-	}
-	err := builder.SetDefaultIfEmpty()
-	if err != nil {
-		ctx.Fatalf("%v", err)
-	}
-
-	action, err := builder.Build()
-	if err != nil {
-		ctx.Fatalf("%v", err)
-	}
-
-	if err := action.Run(); err != nil {
-		ctx.Fatalf("%v", err)
-	}
+	LogLevel string `name:"log-level" help:"Set the log level (debug|info|warn|error)." enum:"debug,info,warn,error"`
 }
