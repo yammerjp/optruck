@@ -26,8 +26,11 @@ func (cli *CLI) setDefaultTargetIfNotSet() error {
 	if cli.Account == "" {
 		// FIXME: not use op.Client directly in plg/config
 		// if account is not specified and exist only one account, use it
-		opClient := cli.buildOpTarget().BuildClient()
-		accounts, err := opClient.ListAccounts()
+		opTarget, err := cli.buildOpTarget(false)
+		if err != nil {
+			return err
+		}
+		accounts, err := opTarget.BuildClient().ListAccounts()
 		if err != nil {
 			return fmt.Errorf("failed to list accounts: %w", err)
 		}
@@ -38,8 +41,11 @@ func (cli *CLI) setDefaultTargetIfNotSet() error {
 	if cli.Vault == "" {
 		// FIXME: not use op.Client directly in plg/config
 		// if vault is not specified and exist only one vault, use it
-		opClient := cli.buildOpTarget().BuildClient()
-		vaults, err := opClient.ListVaults()
+		opTarget, err := cli.buildOpTarget(false)
+		if err != nil {
+			return err
+		}
+		vaults, err := opTarget.BuildClient().ListVaults()
 		if err != nil {
 			return fmt.Errorf("failed to list vaults: %w", err)
 		}

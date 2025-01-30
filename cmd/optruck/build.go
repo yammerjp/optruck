@@ -1,6 +1,7 @@
 package optruck
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -36,24 +37,41 @@ func (cli *CLI) buildLogger() *slog.Logger {
 	return slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel}))
 }
 
-func (cli *CLI) buildOpTarget() op.Target {
-	return op.Target{
+func (cli *CLI) buildOpTarget(strict bool) (*op.Target, error) {
+	if strict {
+		if cli.Account == "" {
+			return nil, fmt.Errorf("--account is required")
+		}
+		if cli.Vault == "" {
+			return nil, fmt.Errorf("--vault is required")
+		}
+		if cli.Item == "" {
+			return nil, fmt.Errorf("item specification is required")
+		}
+	}
+
+	return &op.Target{
 		Account:  cli.Account,
 		Vault:    cli.Vault,
 		ItemName: cli.Item,
-	}
+	}, nil
 }
 
 func (cli *CLI) buildDataSource() (datasources.Source, error) {
+	if cli.EnvFile != "" {
+		return &datasources.EnvFileSource{Path: cli.EnvFile}, nil
+	}
 	if cli.K8sSecret != "" {
+		if cli.K8sNamespace == "" {
+			return nil, fmt.Errorf("--k8s-namespace is required when using --k8s-secret")
+		}
 		return &datasources.K8sSecretSource{
 			Namespace:  cli.K8sNamespace,
 			SecretName: cli.K8sSecret,
 			Client:     kube.NewClient(),
 		}, nil
 	}
-
-	return &datasources.EnvFileSource{Path: cli.EnvFile}, nil
+	return nil, fmt.Errorf("either --env-file or --k8s-secret is required")
 }
 
 func (cli *CLI) buildDest() (output.Dest, error) {
@@ -71,10 +89,6 @@ func (cli *CLI) buildDest() (output.Dest, error) {
 }
 
 func (cli *CLI) Build() (actions.Action, error) {
-	if err := cli.validateCommon(); err != nil {
-		return nil, err
-	}
-
 	ds, err := cli.buildDataSource()
 	if err != nil {
 		return nil, err
@@ -85,9 +99,14 @@ func (cli *CLI) Build() (actions.Action, error) {
 		return nil, err
 	}
 
+	opTarget, err := cli.buildOpTarget(true)
+	if err != nil {
+		return nil, err
+	}
+
 	return &actions.MirrorConfig{
 		Logger:     cli.buildLogger(),
-		Target:     cli.buildOpTarget(),
+		Target:     *opTarget,
 		DataSource: ds,
 		Dest:       dest,
 		Overwrite:  cli.Overwrite,

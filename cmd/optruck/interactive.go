@@ -13,16 +13,11 @@ import (
 )
 
 // TODO: test
-func (cli *CLI) SetConfigInteractively() error {
-	if err := cli.validateSpecially(); err != nil {
-		// Validate early before entering interactive mode, even though we'll check again later
-		return err
-	}
 
+func (cli *CLI) SetOptionsInteractively() error {
 	if err := cli.setDataSourceInteractively(); err != nil {
 		return err
 	}
-
 	if err := cli.setTargetAccountInteractively(); err != nil {
 		return err
 	}
@@ -32,64 +27,10 @@ func (cli *CLI) SetConfigInteractively() error {
 	if err := cli.setTargetItemInteractively(); err != nil {
 		return err
 	}
-
 	if err := cli.setDestInteractively(); err != nil {
 		return err
 	}
-
-	cmds, err := cli.buildResultCommand()
-	if err != nil {
-		return err
-	}
-	if err := cli.SetDefaultIfEmpty(); err != nil {
-		return err
-	}
-	if err := cli.validateCommon(); err != nil {
-		return err
-	}
-	return cli.confirmToProceed(cmds)
-}
-
-func (cli *CLI) confirmToProceed(cmds []string) error {
-	fmt.Printf("The selected options are same as below.\n    $ %s\n", strings.Join(cmds, " "))
-	fmt.Println("Do you want to proceed? (y/n)")
-	prompt := promptui.Select{
-		Label: "Proceed?",
-		Items: []string{"y", "n"},
-	}
-	_, result, err := prompt.Run()
-	if err != nil {
-		return err
-	}
-	if result == "n" {
-		return fmt.Errorf("aborted")
-	}
 	return nil
-}
-
-func (cli *CLI) buildResultCommand() ([]string, error) {
-	cmds := []string{"optruck", cli.Item}
-	if cli.Vault != "" {
-		cmds = append(cmds, "--vault", cli.Vault)
-	}
-	if cli.Account != "" {
-		cmds = append(cmds, "--account", cli.Account)
-	}
-	if cli.EnvFile != "" {
-		cmds = append(cmds, "--env-file", cli.EnvFile)
-	} else if cli.K8sSecret != "" {
-		cmds = append(cmds, "--k8s-secret", cli.K8sSecret)
-		if cli.K8sNamespace != "default" {
-			cmds = append(cmds, "--k8s-namespace", cli.K8sNamespace)
-		}
-	}
-	if cli.Output != "" {
-		cmds = append(cmds, "--output", cli.Output)
-	}
-	if cli.Overwrite {
-		cmds = append(cmds, "--overwrite")
-	}
-	return cmds, nil
 }
 
 func (cli *CLI) setDataSourceInteractively() error {
@@ -183,8 +124,11 @@ func (cli *CLI) setTargetAccountInteractively() error {
 		return nil
 	}
 
-	opClient := cli.buildOpTarget().BuildClient()
-	accounts, err := opClient.ListAccounts()
+	opTarget, err := cli.buildOpTarget(false)
+	if err != nil {
+		return err
+	}
+	accounts, err := opTarget.BuildClient().ListAccounts()
 	if err != nil {
 		return err
 	}
@@ -211,8 +155,11 @@ func (cli *CLI) setTargetVaultInteractively() error {
 	}
 
 	// regenerate opClient with selected account
-	opClient := cli.buildOpTarget().BuildClient()
-	vaults, err := opClient.ListVaults()
+	opTarget, err := cli.buildOpTarget(false)
+	if err != nil {
+		return err
+	}
+	vaults, err := opTarget.BuildClient().ListVaults()
 	if err != nil {
 		return err
 	}
@@ -250,8 +197,11 @@ func (cli *CLI) setTargetItemInteractively() error {
 		return nil
 	}
 
-	opClient := cli.buildOpTarget().BuildClient()
-	items, err := opClient.ListItems()
+	opTarget, err := cli.buildOpTarget(false)
+	if err != nil {
+		return err
+	}
+	items, err := opTarget.BuildClient().ListItems()
 	if err != nil {
 		return err
 	}
