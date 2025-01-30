@@ -1,4 +1,4 @@
-package config
+package optruck
 
 import (
 	"errors"
@@ -13,44 +13,44 @@ import (
 )
 
 // TODO: test
-func (b *ConfigBuilder) SetConfigInteractively() error {
-	if err := b.validateSpecially(); err != nil {
+func (cli *CLI) SetConfigInteractively() error {
+	if err := cli.validateSpecially(); err != nil {
 		// Validate early before entering interactive mode, even though we'll check again later
 		return err
 	}
 
-	if err := b.setDataSourceInteractively(); err != nil {
+	if err := cli.setDataSourceInteractively(); err != nil {
 		return err
 	}
 
-	if err := b.setTargetAccountInteractively(); err != nil {
+	if err := cli.setTargetAccountInteractively(); err != nil {
 		return err
 	}
-	if err := b.setTargetVaultInteractively(); err != nil {
+	if err := cli.setTargetVaultInteractively(); err != nil {
 		return err
 	}
-	if err := b.setTargetItemInteractively(); err != nil {
-		return err
-	}
-
-	if err := b.setDestInteractively(); err != nil {
+	if err := cli.setTargetItemInteractively(); err != nil {
 		return err
 	}
 
-	cmds, err := b.buildResultCommand()
+	if err := cli.setDestInteractively(); err != nil {
+		return err
+	}
+
+	cmds, err := cli.buildResultCommand()
 	if err != nil {
 		return err
 	}
-	if err := b.SetDefaultIfEmpty(); err != nil {
+	if err := cli.SetDefaultIfEmpty(); err != nil {
 		return err
 	}
-	if err := b.validateCommon(); err != nil {
+	if err := cli.validateCommon(); err != nil {
 		return err
 	}
-	return b.confirmToProceed(cmds)
+	return cli.confirmToProceed(cmds)
 }
 
-func (b *ConfigBuilder) confirmToProceed(cmds []string) error {
+func (cli *CLI) confirmToProceed(cmds []string) error {
 	fmt.Printf("The selected options are same as below.\n    $ %s\n", strings.Join(cmds, " "))
 	fmt.Println("Do you want to proceed? (y/n)")
 	prompt := promptui.Select{
@@ -67,33 +67,33 @@ func (b *ConfigBuilder) confirmToProceed(cmds []string) error {
 	return nil
 }
 
-func (b *ConfigBuilder) buildResultCommand() ([]string, error) {
-	cmds := []string{"optruck", b.item}
-	if b.vault != "" {
-		cmds = append(cmds, "--vault", b.vault)
+func (cli *CLI) buildResultCommand() ([]string, error) {
+	cmds := []string{"optruck", cli.Item}
+	if cli.Vault != "" {
+		cmds = append(cmds, "--vault", cli.Vault)
 	}
-	if b.account != "" {
-		cmds = append(cmds, "--account", b.account)
+	if cli.Account != "" {
+		cmds = append(cmds, "--account", cli.Account)
 	}
-	if b.envFile != "" {
-		cmds = append(cmds, "--env-file", b.envFile)
-	} else if b.k8sSecret != "" {
-		cmds = append(cmds, "--k8s-secret", b.k8sSecret)
-		if b.k8sNamespace != "default" {
-			cmds = append(cmds, "--k8s-namespace", b.k8sNamespace)
+	if cli.EnvFile != "" {
+		cmds = append(cmds, "--env-file", cli.EnvFile)
+	} else if cli.K8sSecret != "" {
+		cmds = append(cmds, "--k8s-secret", cli.K8sSecret)
+		if cli.K8sNamespace != "default" {
+			cmds = append(cmds, "--k8s-namespace", cli.K8sNamespace)
 		}
 	}
-	if b.output != "" {
-		cmds = append(cmds, "--output", b.output)
+	if cli.Output != "" {
+		cmds = append(cmds, "--output", cli.Output)
 	}
-	if b.overwrite {
+	if cli.Overwrite {
 		cmds = append(cmds, "--overwrite")
 	}
 	return cmds, nil
 }
 
-func (b *ConfigBuilder) setDataSourceInteractively() error {
-	if b.envFile != "" || b.k8sSecret != "" {
+func (cli *CLI) setDataSourceInteractively() error {
+	if cli.EnvFile != "" || cli.K8sSecret != "" {
 		// already set
 		return nil
 	}
@@ -107,11 +107,11 @@ func (b *ConfigBuilder) setDataSourceInteractively() error {
 	}
 	switch result {
 	case "env file":
-		if err := b.setEnvFilePathInteractively(); err != nil {
+		if err := cli.setEnvFilePathInteractively(); err != nil {
 			return err
 		}
 	case "k8s secret":
-		if err := b.setK8sSecretInteractively(); err != nil {
+		if err := cli.setK8sSecretInteractively(); err != nil {
 			return err
 		}
 	default:
@@ -120,7 +120,7 @@ func (b *ConfigBuilder) setDataSourceInteractively() error {
 	return nil
 }
 
-func (b *ConfigBuilder) setEnvFilePathInteractively() error {
+func (cli *CLI) setEnvFilePathInteractively() error {
 	prompt := promptui.Prompt{
 		Label:   "Enter env file path",
 		Default: defaultEnvFilePath,
@@ -138,18 +138,18 @@ func (b *ConfigBuilder) setEnvFilePathInteractively() error {
 	if err != nil {
 		return err
 	}
-	b.envFile = result
+	cli.EnvFile = result
 	return nil
 }
 
-func (b *ConfigBuilder) setK8sSecretInteractively() error {
+func (cli *CLI) setK8sSecretInteractively() error {
 	kubeClient := kube.NewClient()
 	namespaces, err := kubeClient.GetNamespaces()
 	if err != nil {
 		return err
 	}
 
-	if b.k8sNamespace == "" {
+	if cli.K8sNamespace == "" {
 		prompt := promptui.Select{
 			Label: "Select kubernetes namespace",
 			Items: namespaces,
@@ -158,32 +158,32 @@ func (b *ConfigBuilder) setK8sSecretInteractively() error {
 		if err != nil {
 			return err
 		}
-		b.k8sNamespace = result
+		cli.K8sNamespace = result
 	}
 
-	secrets, err := kubeClient.GetSecrets(b.k8sNamespace)
+	secrets, err := kubeClient.GetSecrets(cli.K8sNamespace)
 	if err != nil {
 		return err
 	}
 	prompt := promptui.Select{
-		Label: fmt.Sprintf("Select kubernetes secret on namespace %s", b.k8sNamespace),
+		Label: fmt.Sprintf("Select kubernetes secret on namespace %s", cli.K8sNamespace),
 		Items: secrets,
 	}
 	_, result, err := prompt.Run()
 	if err != nil {
 		return err
 	}
-	b.k8sSecret = result
+	cli.K8sSecret = result
 	return nil
 }
 
-func (b *ConfigBuilder) setTargetAccountInteractively() error {
-	if b.account != "" {
+func (cli *CLI) setTargetAccountInteractively() error {
+	if cli.Account != "" {
 		// already set
 		return nil
 	}
 
-	opClient := b.buildOpTarget().BuildClient()
+	opClient := cli.buildOpTarget().BuildClient()
 	accounts, err := opClient.ListAccounts()
 	if err != nil {
 		return err
@@ -200,18 +200,18 @@ func (b *ConfigBuilder) setTargetAccountInteractively() error {
 	if err != nil {
 		return err
 	}
-	b.account = result
+	cli.Account = result
 	return nil
 }
 
-func (b *ConfigBuilder) setTargetVaultInteractively() error {
-	if b.vault != "" {
+func (cli *CLI) setTargetVaultInteractively() error {
+	if cli.Vault != "" {
 		// already set
 		return nil
 	}
 
 	// regenerate opClient with selected account
-	opClient := b.buildOpTarget().BuildClient()
+	opClient := cli.buildOpTarget().BuildClient()
 	vaults, err := opClient.ListVaults()
 	if err != nil {
 		return err
@@ -228,12 +228,12 @@ func (b *ConfigBuilder) setTargetVaultInteractively() error {
 	if err != nil {
 		return err
 	}
-	b.vault = result
+	cli.Vault = result
 	return nil
 }
 
-func (b *ConfigBuilder) setTargetItemInteractively() error {
-	if !b.overwrite {
+func (cli *CLI) setTargetItemInteractively() error {
+	if !cli.Overwrite {
 		prompt := promptui.Select{
 			Label: "Select overwrite mode",
 			Items: []string{"overwrite existing", "create new"},
@@ -242,28 +242,28 @@ func (b *ConfigBuilder) setTargetItemInteractively() error {
 		if err != nil {
 			return err
 		}
-		b.overwrite = result == "overwrite existing"
+		cli.Overwrite = result == "overwrite existing"
 	}
 
-	if b.item != "" {
+	if cli.Item != "" {
 		// already set
 		return nil
 	}
 
-	opClient := b.buildOpTarget().BuildClient()
+	opClient := cli.buildOpTarget().BuildClient()
 	items, err := opClient.ListItems()
 	if err != nil {
 		return err
 	}
 
-	if b.overwrite {
-		return b.setItemBySelectExisting(items)
+	if cli.Overwrite {
+		return cli.setItemBySelectExisting(items)
 	}
 
-	return b.setItemByInput(items)
+	return cli.setItemByInput(items)
 }
 
-func (b *ConfigBuilder) setItemBySelectExisting(currentItems []op.SecretReference) error {
+func (cli *CLI) setItemBySelectExisting(currentItems []op.SecretReference) error {
 	itemNames := make([]string, len(currentItems))
 	for i, item := range currentItems {
 		itemNames[i] = fmt.Sprintf("%s: %s", item.ItemID, item.ItemName)
@@ -276,25 +276,25 @@ func (b *ConfigBuilder) setItemBySelectExisting(currentItems []op.SecretReferenc
 	if err != nil {
 		return err
 	}
-	b.item = currentItems[i].ItemID
+	cli.Item = currentItems[i].ItemID
 	return nil
 }
 
-func (b *ConfigBuilder) defaultItemName() string {
+func (cli *CLI) defaultItemName() string {
 	defaultName := ""
 	// TODO: define default item name format
-	if b.envFile != "" {
-		defaultName = fmt.Sprintf("dotenv_%s", filepath.Base(filepath.Dir(b.envFile)))
-	} else if b.k8sSecret != "" {
-		defaultName = fmt.Sprintf("kubernetes_secret_%s_%s", b.k8sNamespace, b.k8sSecret)
+	if cli.EnvFile != "" {
+		defaultName = fmt.Sprintf("dotenv_%s", filepath.Base(filepath.Dir(cli.EnvFile)))
+	} else if cli.K8sSecret != "" {
+		defaultName = fmt.Sprintf("kubernetes_secret_%s_%s", cli.K8sNamespace, cli.K8sSecret)
 	}
 	return defaultName
 }
 
-func (b *ConfigBuilder) setItemByInput(currentItems []op.SecretReference) error {
+func (cli *CLI) setItemByInput(currentItems []op.SecretReference) error {
 	prompt := promptui.Prompt{
 		Label:   "Enter item name",
-		Default: b.defaultItemName(),
+		Default: cli.defaultItemName(),
 		Validate: func(input string) error {
 			if input == "" {
 				return fmt.Errorf("item name is required")
@@ -317,7 +317,7 @@ func (b *ConfigBuilder) setItemByInput(currentItems []op.SecretReference) error 
 	if err != nil {
 		return err
 	}
-	b.item = result
+	cli.Item = result
 	return nil
 }
 
@@ -335,23 +335,23 @@ func validateOutputPath(path string) error {
 	return nil
 }
 
-func (b *ConfigBuilder) setDestInteractively() error {
-	if b.output != "" {
+func (cli *CLI) setDestInteractively() error {
+	if cli.Output != "" {
 		// already set
 		return nil
 	}
 	prompt := promptui.Prompt{
 		Label:    "Enter output path",
-		Default:  defaultOutputPath(b.k8sSecret != "", b.item),
+		Default:  defaultOutputPath(cli.K8sSecret != "", cli.Item),
 		Validate: validateOutputPath,
 	}
 	result, err := prompt.Run()
 	if err != nil {
 		return err
 	}
-	b.output = result
+	cli.Output = result
 
-	if b.overwrite {
+	if cli.Overwrite {
 		// allow overwrite
 		return nil
 	}
@@ -367,6 +367,6 @@ func (b *ConfigBuilder) setDestInteractively() error {
 	if result == "abort" {
 		return fmt.Errorf("aborted, overwrite does not allowed")
 	}
-	b.overwrite = true
+	cli.Overwrite = true
 	return nil
 }

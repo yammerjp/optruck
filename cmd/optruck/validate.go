@@ -1,4 +1,4 @@
-package config
+package optruck
 
 import (
 	"fmt"
@@ -6,46 +6,46 @@ import (
 
 // TODO: test
 
-func (b *ConfigBuilder) validateCommon() error {
-	if err := b.validateSpecially(); err != nil {
+func (cli *CLI) validateCommon() error {
+	if err := cli.validateSpecially(); err != nil {
 		return err
 	}
-	if err := b.validateMissing(); err != nil {
+	if err := cli.validateMissing(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *ConfigBuilder) validateSpecially() error {
-	if len(b.item) > 100 {
+func (cli *CLI) validateSpecially() error {
+	if len(cli.Item) > 100 {
 		return fmt.Errorf("item must be less than 100 characters")
 	}
-	if b.envFile != "" && (b.k8sSecret != "" || b.k8sNamespace != "") {
+	if cli.EnvFile != "" && (cli.K8sSecret != "" || cli.K8sNamespace != "") {
 		return fmt.Errorf("cannot use both --env-file and --k8s-secret or --k8s-namespace")
 	}
 
 	return nil
 }
 
-func (b *ConfigBuilder) validateMissing() error {
-	if b.envFile == "" && b.k8sSecret == "" {
+func (cli *CLI) validateMissing() error {
+	if cli.EnvFile == "" && cli.K8sSecret == "" {
 		return fmt.Errorf("either --env-file or --k8s-secret is required")
 	}
-	if b.k8sSecret != "" && b.k8sNamespace == "" {
+	if cli.K8sSecret != "" && cli.K8sNamespace == "" {
 		return fmt.Errorf("k8s namespace is required")
 	}
 
-	if b.account == "" {
+	if cli.Account == "" {
 		return fmt.Errorf("account is required")
 	}
-	if b.vault == "" {
+	if cli.Vault == "" {
 		return fmt.Errorf("vault is required")
 	}
-	if b.item == "" {
+	if cli.Item == "" {
 		return fmt.Errorf("item is required")
 	}
 
-	if b.output == "" {
+	if cli.Output == "" {
 		return fmt.Errorf("output is required")
 	}
 	return nil

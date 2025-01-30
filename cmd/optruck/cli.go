@@ -96,5 +96,5 @@ type CLI struct {
 
 	// Misc
 	Version  bool   `name:"version" help:"Show the version of optruck."`
-	LogLevel string `name:"log-level" help:"Set the log level (debug|info|warn|error)." enum:"debug,info,warn,error"`
+	LogLevel string `name:"log-level" help:"Set the log level (debug|info|warn|error)."`
 }

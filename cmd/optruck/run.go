@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/yammerjp/optruck/pkg/config"
 )
 
 func Run() {
@@ -17,35 +16,23 @@ func Run() {
 		kong.Help(helpPrinter),
 	)
 
-	logger := cli.buildLogger()
-
 	// Handle version flag
 	if cli.Version {
 		fmt.Printf("optruck version %s\n", version)
 		os.Exit(0)
 	}
 
-	builder := config.NewConfigBuilder().
-		WithItem(cli.Item).
-		WithVault(cli.Vault).
-		WithAccount(cli.Account).
-		WithEnvFile(cli.EnvFile).
-		WithK8sSecret(cli.K8sSecret).
-		WithK8sNamespace(cli.K8sNamespace).
-		WithOutput(cli.Output).
-		WithOverwrite(cli.Overwrite)
-
 	if cli.Interactive {
-		err := builder.SetConfigInteractively()
+		err := cli.SetConfigInteractively()
 		if err != nil {
 			ctx.Fatalf("%v", err)
 		}
 	}
-	if err := builder.SetDefaultIfEmpty(); err != nil {
+	if err := cli.SetDefaultIfEmpty(); err != nil {
 		ctx.Fatalf("%v", err)
 	}
 
-	action, err := builder.Build(logger)
+	action, err := cli.Build()
 	if err != nil {
 		ctx.Fatalf("%v", err)
 	}
