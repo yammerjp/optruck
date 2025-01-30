@@ -2,8 +2,6 @@ package optruck
 
 import (
 	"fmt"
-	"io"
-	"log/slog"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -19,10 +17,7 @@ func Run() {
 		kong.Help(helpPrinter),
 	)
 
-	logger, err := cli.buildLogger()
-	if err != nil {
-		ctx.Fatalf("%v", err)
-	}
+	logger := cli.buildLogger()
 
 	// Handle version flag
 	if cli.Version {
@@ -58,28 +53,4 @@ func Run() {
 	if err := action.Run(); err != nil {
 		ctx.Fatalf("%v", err)
 	}
-}
-
-func (cli *CLI) buildLogger() (*slog.Logger, error) {
-	var logLevel slog.Level
-	var f io.Writer
-	switch cli.LogLevel {
-	case "debug":
-		logLevel = slog.LevelDebug
-		f = os.Stderr
-	case "info":
-		logLevel = slog.LevelInfo
-		f = os.Stderr
-	case "warn":
-		logLevel = slog.LevelWarn
-		f = os.Stderr
-	case "error":
-		logLevel = slog.LevelError
-		f = os.Stderr
-	default:
-		logLevel = slog.LevelInfo
-		f = io.Discard
-	}
-
-	return slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel})), nil
 }
