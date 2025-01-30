@@ -12,7 +12,6 @@ type K8sSecretTemplateDest struct {
 	Path       string
 	Namespace  string
 	SecretName string
-	Overwrite  bool
 }
 
 func (d *K8sSecretTemplateDest) GetPath() string {
@@ -21,20 +20,14 @@ func (d *K8sSecretTemplateDest) GetPath() string {
 
 type k8sTemplateData struct {
 	*op.SecretReference
-	*K8sSecretTemplateDest
+	Dest *K8sSecretTemplateDest
 }
 
 func (d *K8sSecretTemplateDest) GetBasename() string {
 	return filepath.Base(d.Path)
 }
 
-func (d *K8sSecretTemplateDest) Write(secretReference *op.SecretReference, overwrite bool) error {
-	if !overwrite {
-		if err := validateFileNotExists(d.Path); err != nil {
-			return err
-		}
-	}
-
+func (d *K8sSecretTemplateDest) Write(secretReference *op.SecretReference) error {
 	file, err := os.Create(d.Path)
 	if err != nil {
 		return err
@@ -45,12 +38,12 @@ func (d *K8sSecretTemplateDest) Write(secretReference *op.SecretReference, overw
 #   - 1password account: {{.SecretReference.Account}}{{end}}{{if .SecretReference.VaultName}}
 #   - 1password vault: {{.SecretReference.VaultName}}{{end}}
 # To restore, run the following command:
-#   $ op inject -i {{.K8sSecretTemplateDest.GetBasename}} | kubectl apply -f -
+#   $ op inject -i {{.Dest.GetBasename}} | kubectl apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{.K8sSecretTemplateDest.SecretName}}
-  namespace: {{.K8sSecretTemplateDest.Namespace}}
+  name: {{.Dest.SecretName}}
+  namespace: {{.Dest.Namespace}}
 type: Opaque
 data:{{range .SecretReference.GetFieldRefs}}
   {{.Label}}: {{.Ref}}{{end}}
@@ -60,7 +53,7 @@ data:{{range .SecretReference.GetFieldRefs}}
 	}
 
 	return tmpl.Execute(file, k8sTemplateData{
-		SecretReference:       secretReference,
-		K8sSecretTemplateDest: d,
+		SecretReference: secretReference,
+		Dest:            d,
 	})
 }

@@ -3,7 +3,7 @@ package output
 import "github.com/yammerjp/optruck/pkg/op"
 
 type Dest interface {
-	Write(resp *op.SecretReference, overwrite bool) error
+	Write(resp *op.SecretReference) error
 	GetPath() string
 	GetBasename() string
 }

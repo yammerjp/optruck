@@ -91,11 +91,10 @@ func (b *ConfigBuilder) Build() (actions.Action, error) {
 	}
 
 	return &actions.MirrorConfig{
-		Logger:            logger,
-		Target:            b.buildOpTarget(),
-		DataSource:        ds,
-		Dest:              dest,
-		OverwriteTarget:   b.overwrite,
-		OverwriteTemplate: b.overwrite,
+		Logger:     logger,
+		Target:     b.buildOpTarget(),
+		DataSource: ds,
+		Dest:       dest,
+		Overwrite:  b.overwrite,
 	}, nil
 }

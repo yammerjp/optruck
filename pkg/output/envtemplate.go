@@ -1,8 +1,6 @@
 package output
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -27,26 +25,10 @@ type envTemplateData struct {
 	Dest *EnvTemplateDest
 }
 
-var ErrFileAlreadyExists = errors.New("file already exists")
-
-func validateFileNotExists(path string) error {
-	_, err := os.Stat(path)
-	if err == nil {
-		return ErrFileAlreadyExists
-	}
-	return nil
-}
-
-func (d *EnvTemplateDest) Write(secretReference *op.SecretReference, overwrite bool) error {
-	if !overwrite {
-		if err := validateFileNotExists(d.Path); err != nil {
-			return err
-		}
-	}
-
-	file, err := os.OpenFile(d.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func (d *EnvTemplateDest) Write(secretReference *op.SecretReference) error {
+	file, err := os.Create(d.Path)
 	if err != nil {
-		return fmt.Errorf("failed to open env template file: %v", err)
+		return err
 	}
 	defer file.Close()
 
