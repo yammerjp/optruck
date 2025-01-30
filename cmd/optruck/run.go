@@ -23,7 +23,6 @@ func Run() {
 
 func (cli *CLI) Run() error {
 	if err := cli.validateConflictOptions(); err != nil {
-		// Validate early before entering interactive mode, even though we'll check again later
 		return err
 	}
 
@@ -42,9 +41,6 @@ func (cli *CLI) Run() error {
 		return err
 	}
 
-	if err := cli.validateConflictOptions(); err != nil {
-		return err
-	}
 	action, err := cli.Build()
 	if err != nil {
 		return err

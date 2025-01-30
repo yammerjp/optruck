@@ -7,12 +7,23 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alecthomas/kong"
 	"github.com/manifoldco/promptui"
 	"github.com/yammerjp/optruck/pkg/kube"
 	"github.com/yammerjp/optruck/pkg/op"
 )
 
 // TODO: test
+
+func (i InteractiveFlag) BeforeApply(ctx *kong.Context) error {
+	cli := CLI{}
+	if err := cli.SetOptionsInteractively(); err != nil {
+		return err
+	}
+	// confirm
+	// set options
+	return nil
+}
 
 func (cli *CLI) SetOptionsInteractively() error {
 	if err := cli.setDataSourceInteractively(); err != nil {
