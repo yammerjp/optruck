@@ -251,28 +251,11 @@ func (b *ConfigBuilder) setTargetItemInteractively() error {
 		return err
 	}
 
-	if b.overwrite || b.overwriteTarget {
+	if b.overwrite {
 		return b.setItemBySelectExisting(items)
 	}
 
 	return b.setItemByInput(items)
-}
-
-func (b *ConfigBuilder) setItemOverwriteModeInteractively() error {
-	if b.overwriteTarget || b.overwrite {
-		// already set
-		return nil
-	}
-	prompt := promptui.Select{
-		Label: "Select overwrite mode",
-		Items: []string{"overwrite existing", "create new"},
-	}
-	_, result, err := prompt.Run()
-	if err != nil {
-		return err
-	}
-	b.overwriteTarget = result == "overwrite existing"
-	return nil
 }
 
 func (b *ConfigBuilder) setItemBySelectExisting(currentItems []op.SecretReference) error {
@@ -292,63 +275,22 @@ func (b *ConfigBuilder) setItemBySelectExisting(currentItems []op.SecretReferenc
 	return nil
 }
 
+func (b *ConfigBuilder) defaultItemName() string {
+	defaultName := ""
+	// TODO: define default item name format
+	if b.envFile != "" {
+		defaultName = fmt.Sprintf("dotenv_%s", filepath.Base(filepath.Dir(b.envFile)))
+	} else if b.k8sSecret != "" {
+		defaultName = fmt.Sprintf("kubernetes_secret_%s_%s", b.k8sNamespace, b.k8sSecret)
+	}
+	return defaultName
+}
+
 func (b *ConfigBuilder) setItemByInput(currentItems []op.SecretReference) error {
-	itemNames := make([]string, len(currentItems))
-	for i, item := range currentItems {
-		itemNames[i] = item.ItemName
-	}
-	if b.overwrite {
-		// TODO: return item id if item name is duplicated
-		prompt := promptui.Select{
-			Label: "Select item name",
-			Items: itemNames,
-		}
-		_, result, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-		b.item = result
-	} else {
-		defaultName := ""
-		// TODO: define default item name format
-		if b.envFile != "" {
-			defaultName = fmt.Sprintf("dotenv_%s", filepath.Base(filepath.Dir(b.envFile)))
-		} else if b.k8sSecret != "" {
-			defaultName = fmt.Sprintf("kubernetes_secret_%s_%s", b.k8sNamespace, b.k8sSecret)
-		}
-		prompt := promptui.Prompt{
-			Label:   "Enter item name",
-			Default: defaultName,
-			Validate: func(input string) error {
-				// TODO: define item name format
-				if input == "" {
-					return fmt.Errorf("item name is required")
-				}
-				if len(input) > 100 {
-					return fmt.Errorf("item name must be less than 100 characters")
-				}
-				if strings.Contains(input, " ") {
-					return fmt.Errorf("item name must not contain spaces")
-				}
-				for _, n := range itemNames {
-					if n == input {
-						return fmt.Errorf("item name must be unique")
-					}
-				}
-				return nil
-			},
-		}
-		result, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-		b.item = result
-	}
 	prompt := promptui.Prompt{
 		Label:   "Enter item name",
-		Default: defaultName,
+		Default: b.defaultItemName(),
 		Validate: func(input string) error {
-			// TODO: define item name format
 			if input == "" {
 				return fmt.Errorf("item name is required")
 			}
@@ -358,8 +300,8 @@ func (b *ConfigBuilder) setItemByInput(currentItems []op.SecretReference) error 
 			if strings.Contains(input, " ") {
 				return fmt.Errorf("item name must not contain spaces")
 			}
-			for _, n := range itemNames {
-				if n == input {
+			for _, n := range currentItems {
+				if n.ItemName == input {
 					return fmt.Errorf("item name must be unique")
 				}
 			}
