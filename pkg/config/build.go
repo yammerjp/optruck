@@ -12,7 +12,7 @@ import (
 	"github.com/yammerjp/optruck/pkg/output"
 )
 
-func (b *ConfigBuilder) BuildLogger() (*slog.Logger, error) {
+func (b *ConfigBuilder) buildLogger() (*slog.Logger, error) {
 	var logLevel slog.Level
 	var f io.Writer
 	switch b.logLevel {
@@ -85,7 +85,7 @@ func (b *ConfigBuilder) Build() (actions.Action, error) {
 		return nil, err
 	}
 
-	logger, err := b.BuildLogger()
+	logger, err := b.buildLogger()
 	if err != nil {
 		return nil, err
 	}

@@ -69,17 +69,22 @@ func (b *ConfigBuilder) confirmToProceed(cmds []string) error {
 
 func (b *ConfigBuilder) buildResultCommand() ([]string, error) {
 	cmds := []string{"optruck", b.item}
-	if b.envFile != "" {
-		cmds = append(cmds, "--env-file", b.envFile)
-	}
-	if b.output != "" {
-		cmds = append(cmds, "--output", b.output)
-	}
 	if b.vault != "" {
 		cmds = append(cmds, "--vault", b.vault)
 	}
 	if b.account != "" {
 		cmds = append(cmds, "--account", b.account)
+	}
+	if b.envFile != "" {
+		cmds = append(cmds, "--env-file", b.envFile)
+	} else if b.k8sSecret != "" {
+		cmds = append(cmds, "--k8s-secret", b.k8sSecret)
+		if b.k8sNamespace != "default" {
+			cmds = append(cmds, "--k8s-namespace", b.k8sNamespace)
+		}
+	}
+	if b.output != "" {
+		cmds = append(cmds, "--output", b.output)
 	}
 	if b.overwrite {
 		cmds = append(cmds, "--overwrite")
