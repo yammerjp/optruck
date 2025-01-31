@@ -28,24 +28,25 @@ func (cli *CLI) SetDefaultIfEmpty() error {
 
 func (cli *CLI) setDefaultTargetIfNotSet() error {
 	if cli.Account == "" {
-		// if account is not specified and exist only one account, use it
 		accounts, err := op.NewExecutableClient(nil).ListAccounts()
 		if err != nil {
 			return fmt.Errorf("failed to list accounts: %w", err)
 		}
-		if len(accounts) == 1 {
-			cli.Account = accounts[0].URL
+		if len(accounts) != 1 {
+			return fmt.Errorf("multiple accounts found, please specify the account")
 		}
+		cli.Account = accounts[0].URL
 	}
+
 	if cli.Vault == "" {
-		// if vault is not specified and exist only one vault, use it
 		vaults, err := op.NewAccountClient(cli.Account, nil).ListVaults()
 		if err != nil {
 			return fmt.Errorf("failed to list vaults: %w", err)
 		}
-		if len(vaults) == 1 {
-			cli.Vault = vaults[0].Name
+		if len(vaults) != 1 {
+			return fmt.Errorf("multiple vaults found, please specify the vault")
 		}
+		cli.Vault = vaults[0].Name
 	}
 	return nil
 }

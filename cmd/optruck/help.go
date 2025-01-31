@@ -22,7 +22,7 @@ Arguments:
 Data Source Options (default: --env-file):
   Specify where to fetch secrets from. Choose one of the following:
   --env-file <path>     Path to the .env file containing secrets (default: ".env").
-  --k8s-secret <name>   Name of the Kubernetes Secret to fetch secrets from.
+  --k8s-secret <name>   Name or ID of the Kubernetes Secret to fetch secrets from.
                         When this option is used, you can also specify:
                         - --k8s-namespace <name>: Kubernetes namespace (default: "default").
 
@@ -33,7 +33,7 @@ General Options:
   --vault <value>       1Password Vault (e.g., "Development" or "abcd1234efgh5678").
   --account <value>     1Password account (e.g., "my.1password.com" or "my.1password.example.com").
   --overwrite           Overwrite the existing 1Password item if it exists.
-  --interactive         Enable interactive mode for selecting the item, account, and vault.
+  -i, --interactive     Enable interactive mode for selecting the item, account, and vault.
                         In this mode, <item> is optional.
   --log-level <level>   Set the log level (debug|info|warn|error). Defaults to "info".
   -h, --help            Show help for optruck.

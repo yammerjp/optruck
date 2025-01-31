@@ -6,6 +6,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/manifoldco/promptui"
+	"github.com/yammerjp/optruck/pkg/actions"
 )
 
 func Run() {
@@ -21,41 +22,30 @@ func Run() {
 	}
 }
 
-func (cli *CLI) Run() error {
-	if err := cli.validateConflictOptions(); err != nil {
-		return err
-	}
-
+func (cli *CLI) buildOrBuildWithInteractive() (actions.Action, error) {
 	if cli.Interactive {
 		if err := cli.SetOptionsInteractively(); err != nil {
-			return err
+			return nil, err
 		}
+		cmds, err := cli.buildResultCommand()
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			if err == nil {
+				err = cli.confirmToProceed(cmds)
+			}
+		}()
 	}
+	return cli.buildWithDefault()
+}
 
-	cmds, err := cli.buildResultCommand()
+func (cli *CLI) Run() error {
+	action, err := cli.buildOrBuildWithInteractive()
 	if err != nil {
 		return err
 	}
-
-	if err := cli.SetDefaultIfEmpty(); err != nil {
-		return err
-	}
-
-	action, err := cli.Build()
-	if err != nil {
-		return err
-	}
-
-	if cli.Interactive {
-		if err := cli.confirmToProceed(cmds); err != nil {
-			return err
-		}
-	}
-
-	if err := action.Run(); err != nil {
-		return err
-	}
-	return nil
+	return action.Run()
 }
 
 func (cli *CLI) confirmToProceed(cmds []string) error {

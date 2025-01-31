@@ -3,27 +3,17 @@ package optruck
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/alecthomas/kong"
 	"github.com/manifoldco/promptui"
 	"github.com/yammerjp/optruck/pkg/kube"
 	"github.com/yammerjp/optruck/pkg/op"
 )
 
 // TODO: test
-
-func (i InteractiveFlag) BeforeApply(ctx *kong.Context) error {
-	cli := CLI{}
-	if err := cli.SetOptionsInteractively(); err != nil {
-		return err
-	}
-	// confirm
-	// set options
-	return nil
-}
 
 func (cli *CLI) SetOptionsInteractively() error {
 	if err := cli.setDataSourceInteractively(); err != nil {
@@ -46,6 +36,7 @@ func (cli *CLI) SetOptionsInteractively() error {
 
 func (cli *CLI) setDataSourceInteractively() error {
 	if cli.EnvFile != "" || cli.K8sSecret != "" {
+		slog.Debug("data source already set", "envFile", cli.EnvFile, "k8sSecret", cli.K8sSecret)
 		// already set
 		return nil
 	}
@@ -53,16 +44,20 @@ func (cli *CLI) setDataSourceInteractively() error {
 		Label: "Select data source",
 		Items: []string{"env file", "k8s secret"},
 	}
+	slog.Debug("selecting data source", "items", prompt.Items)
 	_, result, err := prompt.Run()
 	if err != nil {
 		return err
 	}
+	slog.Debug("selected data source", "result", result)
 	switch result {
 	case "env file":
+		slog.Debug("setting env file path")
 		if err := cli.setEnvFilePathInteractively(); err != nil {
 			return err
 		}
 	case "k8s secret":
+		slog.Debug("setting k8s secret")
 		if err := cli.setK8sSecretInteractively(); err != nil {
 			return err
 		}
@@ -80,8 +75,15 @@ func (cli *CLI) setEnvFilePathInteractively() error {
 			if input == "" {
 				return fmt.Errorf("env file path is required")
 			}
-			if _, err := os.Stat(input); err != nil {
-				return fmt.Errorf("env file does not exist")
+			stat, err := os.Stat(input)
+			if err != nil {
+				if os.IsNotExist(err) {
+					return nil
+				}
+				return err
+			}
+			if stat.IsDir() {
+				return fmt.Errorf("env file path is already created as a directory")
 			}
 			return nil
 		},

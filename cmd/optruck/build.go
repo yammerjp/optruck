@@ -13,6 +13,38 @@ import (
 	"github.com/yammerjp/optruck/pkg/output"
 )
 
+func (cli *CLI) buildWithDefault() (actions.Action, error) {
+	if err := cli.SetDefaultIfEmpty(); err != nil {
+		return nil, err
+	}
+	return cli.build()
+}
+
+func (cli *CLI) build() (actions.Action, error) {
+	ds, err := cli.buildDataSource()
+	if err != nil {
+		return nil, err
+	}
+
+	dest, err := cli.buildDest()
+	if err != nil {
+		return nil, err
+	}
+
+	opItemClient, err := cli.buildOpItemClient(true)
+	if err != nil {
+		return nil, err
+	}
+
+	return &actions.MirrorConfig{
+		Logger:       cli.buildLogger(),
+		OpItemClient: *opItemClient,
+		DataSource:   ds,
+		Dest:         dest,
+		Overwrite:    cli.Overwrite,
+	}, nil
+}
+
 func (cli *CLI) buildLogger() *slog.Logger {
 	var logLevel slog.Level
 	var f io.Writer
@@ -81,30 +113,5 @@ func (cli *CLI) buildDest() (output.Dest, error) {
 
 	return &output.EnvTemplateDest{
 		Path: cli.Output,
-	}, nil
-}
-
-func (cli *CLI) Build() (actions.Action, error) {
-	ds, err := cli.buildDataSource()
-	if err != nil {
-		return nil, err
-	}
-
-	dest, err := cli.buildDest()
-	if err != nil {
-		return nil, err
-	}
-
-	opItemClient, err := cli.buildOpItemClient(true)
-	if err != nil {
-		return nil, err
-	}
-
-	return &actions.MirrorConfig{
-		Logger:       cli.buildLogger(),
-		OpItemClient: *opItemClient,
-		DataSource:   ds,
-		Dest:         dest,
-		Overwrite:    cli.Overwrite,
 	}, nil
 }
