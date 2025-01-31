@@ -67,12 +67,18 @@ func (cli *CLI) confirmToProceed(cmds []string) error {
 
 func (cli *CLI) buildResultCommand() ([]string, error) {
 	cmds := []string{"optruck", cli.Item}
-	if cli.Vault != "" {
-		cmds = append(cmds, "--vault", cli.Vault)
+	// target options
+	if cli.Overwrite {
+		cmds = append(cmds, "--overwrite")
 	}
 	if cli.Account != "" {
 		cmds = append(cmds, "--account", cli.Account)
 	}
+	if cli.Vault != "" {
+		cmds = append(cmds, "--vault", cli.Vault)
+	}
+
+	// data source options
 	if cli.EnvFile != "" {
 		cmds = append(cmds, "--env-file", cli.EnvFile)
 	} else if cli.K8sSecret != "" {
@@ -81,11 +87,10 @@ func (cli *CLI) buildResultCommand() ([]string, error) {
 			cmds = append(cmds, "--k8s-namespace", cli.K8sNamespace)
 		}
 	}
+
+	// output options
 	if cli.Output != "" {
 		cmds = append(cmds, "--output", cli.Output)
-	}
-	if cli.Overwrite {
-		cmds = append(cmds, "--overwrite")
 	}
 	return cmds, nil
 }
