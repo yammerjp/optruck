@@ -22,12 +22,13 @@ func Run() {
 	}
 }
 
-func (cli *CLI) buildOrBuildWithInteractive() (actions.Action, error) {
+func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error) {
 	if cli.Interactive {
-		if err := cli.SetOptionsInteractively(); err != nil {
+		if err = cli.SetOptionsInteractively(); err != nil {
 			return nil, err
 		}
-		cmds, err := cli.buildResultCommand()
+		var cmds []string
+		cmds, err = cli.buildResultCommand()
 		if err != nil {
 			return nil, err
 		}
@@ -49,17 +50,28 @@ func (cli *CLI) Run() error {
 }
 
 func (cli *CLI) confirmToProceed(cmds []string) error {
-	fmt.Printf("The selected options are same as below.\n    $ %s\n", strings.Join(cmds, " "))
-	fmt.Println("Do you want to proceed? (y/n)")
-	prompt := promptui.Select{
-		Label: "Proceed?",
-		Items: []string{"y", "n"},
+	fmt.Println("The selected options are same as below.")
+	fmt.Print("    $ optruck")
+	for _, cmd := range cmds {
+		if strings.HasPrefix(cmd, "--") {
+			// break line
+			fmt.Printf(" \\\n      %s", cmd)
+		} else {
+			fmt.Printf(" %s", cmd)
+		}
 	}
-	_, result, err := prompt.Run()
+	fmt.Println()
+
+	prompt := promptui.Select{
+		Label:     "Do you want to proceed? (yes/no)",
+		Items:     []string{"yes", "no"},
+		Templates: selectTemplateBuilder("Do you want to proceed?", "", ""),
+	}
+	i, _, err := prompt.Run()
 	if err != nil {
 		return err
 	}
-	if result == "n" {
+	if i != 0 {
 		return fmt.Errorf("aborted")
 	}
 	return nil

@@ -34,6 +34,39 @@ func (cli *CLI) SetOptionsInteractively() error {
 	return nil
 }
 
+func selectTemplateBuilder(selectedPrefix string, mainField string, subField string) *promptui.SelectTemplates {
+	active := fmt.Sprintf("▸ {{ .%s | cyan | underline }}", mainField)
+	if subField != "" {
+		active += fmt.Sprintf(` {{"("|faint}}{{ .%s | red | underline }}{{")"|faint}}`, subField)
+	}
+
+	inactive := fmt.Sprintf("  {{ .%s | cyan }}", mainField)
+	if subField != "" {
+		inactive += fmt.Sprintf(` {{"("|faint}}{{ .%s | red }}{{")"|faint}}`, subField)
+	}
+
+	selected := fmt.Sprintf(`{{ "✔" | green }} %-20s: {{ .%s }}`, selectedPrefix, mainField)
+	if subField != "" {
+		selected += fmt.Sprintf(` {{"("|faint}}{{ .%s }}{{")"|faint}}`, subField)
+	}
+
+	return &promptui.SelectTemplates{
+		Label:    `{{ . | yellow }}`,
+		Active:   active,
+		Inactive: inactive,
+		Selected: selected,
+	}
+}
+
+func promptTemplateBuilder(successPrefix string, mainField string) *promptui.PromptTemplates {
+	return &promptui.PromptTemplates{
+		Prompt:  `{{ . | yellow }}`,
+		Valid:   fmt.Sprintf(`{{ "✔" | green }} {{ .%s | yellow }}`, mainField),
+		Invalid: fmt.Sprintf(`{{ "✘" | red }} {{ .%s | yellow }}`, mainField),
+		Success: fmt.Sprintf(`{{ "✔" | green }} %-20s: `, successPrefix),
+	}
+}
+
 func (cli *CLI) setDataSourceInteractively() error {
 	if cli.EnvFile != "" || cli.K8sSecret != "" {
 		slog.Debug("data source already set", "envFile", cli.EnvFile, "k8sSecret", cli.K8sSecret)
@@ -41,8 +74,9 @@ func (cli *CLI) setDataSourceInteractively() error {
 		return nil
 	}
 	prompt := promptui.Select{
-		Label: "Select data source",
-		Items: []string{"env file", "k8s secret"},
+		Label:     "Select data source: ",
+		Items:     []string{"env file", "k8s secret"},
+		Templates: selectTemplateBuilder("Data Source", "", ""),
 	}
 	slog.Debug("selecting data source", "items", prompt.Items)
 	_, result, err := prompt.Run()
@@ -69,7 +103,7 @@ func (cli *CLI) setDataSourceInteractively() error {
 
 func (cli *CLI) setEnvFilePathInteractively() error {
 	prompt := promptui.Prompt{
-		Label:   "Enter env file path",
+		Label:   "Enter env file path: ",
 		Default: defaultEnvFilePath,
 		Validate: func(input string) error {
 			if input == "" {
@@ -87,6 +121,7 @@ func (cli *CLI) setEnvFilePathInteractively() error {
 			}
 			return nil
 		},
+		Templates: promptTemplateBuilder("Env File Path", ""),
 	}
 	result, err := prompt.Run()
 	if err != nil {
@@ -105,8 +140,9 @@ func (cli *CLI) setK8sSecretInteractively() error {
 
 	if cli.K8sNamespace == "" {
 		prompt := promptui.Select{
-			Label: "Select kubernetes namespace",
-			Items: namespaces,
+			Label:     "Select Kubernetes Namespace: ",
+			Items:     namespaces,
+			Templates: selectTemplateBuilder("Kubernetes Namespace", "", ""),
 		}
 		_, result, err := prompt.Run()
 		if err != nil {
@@ -120,8 +156,9 @@ func (cli *CLI) setK8sSecretInteractively() error {
 		return err
 	}
 	prompt := promptui.Select{
-		Label: fmt.Sprintf("Select kubernetes secret on namespace %s", cli.K8sNamespace),
-		Items: secrets,
+		Label:     fmt.Sprintf("Select kubernetes secret on namespace %s", cli.K8sNamespace),
+		Items:     secrets,
+		Templates: selectTemplateBuilder("Kubernetes Secret", "", ""),
 	}
 	_, result, err := prompt.Run()
 	if err != nil {
@@ -141,19 +178,16 @@ func (cli *CLI) setTargetAccountInteractively() error {
 	if err != nil {
 		return err
 	}
-	accountNames := make([]string, len(accounts))
-	for i, account := range accounts {
-		accountNames[i] = account.URL
-	}
 	prompt := promptui.Select{
-		Label: "Select account",
-		Items: accountNames,
+		Label:     "Select 1Password account: ",
+		Items:     accounts,
+		Templates: selectTemplateBuilder("1Password Account", "Email", "URL"),
 	}
-	_, result, err := prompt.Run()
+	i, _, err := prompt.Run()
 	if err != nil {
 		return err
 	}
-	cli.Account = result
+	cli.Account = accounts[i].URL
 	return nil
 }
 
@@ -167,27 +201,25 @@ func (cli *CLI) setTargetVaultInteractively() error {
 	if err != nil {
 		return err
 	}
-	vaultNames := make([]string, len(vaults))
-	for i, vault := range vaults {
-		vaultNames[i] = vault.Name
-	}
 	prompt := promptui.Select{
-		Label: "Select vault",
-		Items: vaultNames,
+		Label:     "Select 1Password vault: ",
+		Items:     vaults,
+		Templates: selectTemplateBuilder("1Password Vault", "Name", "ID"),
 	}
-	_, result, err := prompt.Run()
+	i, _, err := prompt.Run()
 	if err != nil {
 		return err
 	}
-	cli.Vault = result
+	cli.Vault = vaults[i].ID
 	return nil
 }
 
 func (cli *CLI) setTargetItemInteractively() error {
 	if !cli.Overwrite {
 		prompt := promptui.Select{
-			Label: "Select overwrite mode",
-			Items: []string{"overwrite existing", "create new"},
+			Label:     "Select overwrite mode: ",
+			Items:     []string{"overwrite existing", "create new"},
+			Templates: selectTemplateBuilder("Overwrite mode", "", ""),
 		}
 		_, result, err := prompt.Run()
 		if err != nil {
@@ -214,13 +246,10 @@ func (cli *CLI) setTargetItemInteractively() error {
 }
 
 func (cli *CLI) setItemBySelectExisting(currentItems []op.SecretReference) error {
-	itemNames := make([]string, len(currentItems))
-	for i, item := range currentItems {
-		itemNames[i] = fmt.Sprintf("%s: %s", item.ItemID, item.ItemName)
-	}
 	prompt := promptui.Select{
-		Label: "Select item name",
-		Items: itemNames,
+		Label:     "Select 1Password item name: ",
+		Items:     currentItems,
+		Templates: selectTemplateBuilder("1Password Item", "ItemName", "ItemID"),
 	}
 	i, _, err := prompt.Run()
 	if err != nil {
@@ -243,11 +272,14 @@ func (cli *CLI) defaultItemName() string {
 
 func (cli *CLI) setItemByInput(currentItems []op.SecretReference) error {
 	prompt := promptui.Prompt{
-		Label:   "Enter item name",
+		Label:   "Enter 1Password item name: ",
 		Default: cli.defaultItemName(),
 		Validate: func(input string) error {
 			if input == "" {
 				return fmt.Errorf("item name is required")
+			}
+			if len(input) < 1 {
+				return fmt.Errorf("item name must be at least 1 character")
 			}
 			if len(input) > 100 {
 				return fmt.Errorf("item name must be less than 100 characters")
@@ -262,6 +294,7 @@ func (cli *CLI) setItemByInput(currentItems []op.SecretReference) error {
 			}
 			return nil
 		},
+		Templates: promptTemplateBuilder("1Password Item Name", ""),
 	}
 	result, err := prompt.Run()
 	if err != nil {
@@ -291,9 +324,10 @@ func (cli *CLI) setDestInteractively() error {
 		return nil
 	}
 	prompt := promptui.Prompt{
-		Label:    "Enter output path",
-		Default:  defaultOutputPath(cli.K8sSecret != "", cli.Item),
-		Validate: validateOutputPath,
+		Label:     "Enter output template file path: ",
+		Default:   defaultOutputPath(cli.K8sSecret),
+		Validate:  validateOutputPath,
+		Templates: promptTemplateBuilder("Output Path", ""),
 	}
 	result, err := prompt.Run()
 	if err != nil {

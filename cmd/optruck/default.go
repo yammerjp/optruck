@@ -60,14 +60,14 @@ func (cli *CLI) setDefaultDataSourceIfNotSet() error {
 
 func (cli *CLI) setDefaultOutputIfNotSet() error {
 	if cli.Output == "" {
-		cli.Output = defaultOutputPath(cli.K8sSecret != "", cli.Item)
+		cli.Output = defaultOutputPath(cli.K8sSecret)
 	}
 	return nil
 }
 
-func defaultOutputPath(isK8s bool, itemName string) string {
-	if isK8s {
-		return fmt.Sprintf("%s-secret.yaml.1password", itemName)
+func defaultOutputPath(k8sSecret string) string {
+	if k8sSecret != "" {
+		return fmt.Sprintf("%s-secret.yaml.1password", k8sSecret)
 	}
 	return ".env.1password"
 }
