@@ -115,6 +115,7 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 
 ## TODO
 
+- [ ] Fix default output path
 - [ ] More descriptive error messages to help user
 - [ ] Fix logging
 - [ ] Add tests for kube client
