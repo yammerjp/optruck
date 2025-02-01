@@ -24,6 +24,7 @@ func Run() {
 
 func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error) {
 	if cli.Interactive {
+		cli.runner = &InteractiveRunnerImpl{}
 		if err = cli.SetOptionsInteractively(); err != nil {
 			return nil, err
 		}
@@ -62,12 +63,11 @@ func (cli *CLI) confirmToProceed(cmds []string) error {
 	}
 	fmt.Println()
 
-	prompt := promptui.Select{
+	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Do you want to proceed? (yes/no)",
 		Items:     []string{"yes", "no"},
 		Templates: selectTemplateBuilder("Do you want to proceed?", "", ""),
-	}
-	i, _, err := prompt.Run()
+	})
 	if err != nil {
 		return err
 	}
