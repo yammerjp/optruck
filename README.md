@@ -2,13 +2,12 @@
 
 **Note:** This project is currently under active development and not yet stable.
 
-optruck is a CLI tool for managing secrets and creating templates with 1Password. It helps you upload secrets to 1Password Vaults and generate restoration templates.
+optruck is a CLI tool that streamlines secret management with 1Password by providing a simple way to upload secrets and generate restoration templates.
 
 ## Features
 
 - Upload secrets from environment files or Kubernetes Secrets to 1Password
 - Generate restoration templates from 1Password items
-- Mirror secrets (upload and generate templates in one command)
 - Support for both environment file and Kubernetes Secret formats
 - Interactive mode for selecting items, accounts, and vaults
 
@@ -79,12 +78,6 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 
 ## Advanced Usage
 
-### Actions (default: --mirror)
-
-- `--upload`: Upload secrets to 1Password Vault
-- `--template`: Generate a restoration template from the 1Password Vault
-- `--mirror`: Upload secrets and generate a restoration template (default)
-
 ### Data Source Options (default: --env-file)
 
 - `--env-file <path>`: Path to the .env file containing secrets (default: ".env")
@@ -111,8 +104,7 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 
 ## Notes
 
-- Default action is `--mirror`, which uploads secrets and generates a template
-- Use `--overwrite` to update existing 1Password items and output files
+- Use `--overwrite` to update existing 1Password items 
 - When using Kubernetes options, ensure kubectl is properly configured
 - The tool requires appropriate 1Password CLI configuration and authentication
 
