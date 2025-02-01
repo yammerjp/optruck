@@ -14,8 +14,8 @@ type Client struct {
 	exec.Interface
 }
 
-func NewClient() *Client {
-	return &Client{exec.New()}
+func NewClient(exec exec.Interface) *Client {
+	return &Client{exec}
 }
 
 func (c *Client) GetSecret(namespace, secretName string) (map[string]string, error) {

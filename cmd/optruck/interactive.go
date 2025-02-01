@@ -13,8 +13,6 @@ import (
 	"github.com/yammerjp/optruck/pkg/op"
 )
 
-// TODO: test
-
 func (cli *CLI) SetOptionsInteractively() error {
 	if err := cli.setDataSourceInteractively(); err != nil {
 		return err
@@ -144,7 +142,7 @@ func (cli *CLI) setEnvFilePathInteractively() error {
 }
 
 func (cli *CLI) setK8sSecretInteractively() error {
-	kubeClient := kube.NewClient()
+	kubeClient := kube.NewClient(cli.exec)
 	namespaces, err := kubeClient.GetNamespaces()
 	if err != nil {
 		return err
@@ -184,9 +182,12 @@ func (cli *CLI) setTargetAccountInteractively() error {
 		return nil
 	}
 
-	accounts, err := op.NewExecutableClient(nil).ListAccounts()
+	accounts, err := op.NewExecutableClient(cli.exec).ListAccounts()
 	if err != nil {
 		return err
+	}
+	if len(accounts) == 0 {
+		return fmt.Errorf("no 1Password accounts found")
 	}
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Select 1Password account: ",
@@ -206,9 +207,16 @@ func (cli *CLI) setTargetVaultInteractively() error {
 		return nil
 	}
 
-	vaults, err := op.NewAccountClient(cli.Account, nil).ListVaults()
+	if cli.Account == "" {
+		return fmt.Errorf("account must be set before selecting vault")
+	}
+
+	vaults, err := op.NewAccountClient(cli.Account, cli.exec).ListVaults()
 	if err != nil {
 		return err
+	}
+	if len(vaults) == 0 {
+		return fmt.Errorf("no vaults found in account %s", cli.Account)
 	}
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Select 1Password vault: ",
@@ -240,12 +248,23 @@ func (cli *CLI) setTargetItemInteractively() error {
 		return nil
 	}
 
-	items, err := op.NewVaultClient(cli.Account, cli.Vault, nil).ListItems()
+	if cli.Account == "" {
+		return fmt.Errorf("account must be set before selecting item")
+	}
+
+	if cli.Vault == "" {
+		return fmt.Errorf("vault must be set before selecting item")
+	}
+
+	items, err := op.NewVaultClient(cli.Account, cli.Vault, cli.exec).ListItems()
 	if err != nil {
 		return err
 	}
 
 	if cli.Overwrite {
+		if len(items) == 0 {
+			return fmt.Errorf("no items found in vault %s", cli.Vault)
+		}
 		return cli.setItemBySelectExisting(items)
 	}
 
@@ -328,32 +347,41 @@ func (cli *CLI) setDestInteractively() error {
 		// already set
 		return nil
 	}
+
 	result, err := cli.runner.Input(promptui.Prompt{
-		Label:     "Enter output template file path: ",
-		Default:   defaultOutputPath(cli.K8sSecret),
-		Validate:  validateOutputPath,
+		Label: "Enter output path: ",
+		Validate: func(input string) error {
+			if input == "" {
+				return fmt.Errorf("output path is required")
+			}
+			// Check if the directory exists
+			dir := filepath.Dir(input)
+			if _, err := os.Stat(dir); os.IsNotExist(err) {
+				return fmt.Errorf("directory %s does not exist", dir)
+			}
+			return nil
+		},
 		Templates: promptTemplateBuilder("Output Path", ""),
 	})
 	if err != nil {
 		return err
 	}
+
+	// Check if file exists
+	if _, err := os.Stat(result); err == nil {
+		_, overwrite, err := cli.runner.Select(promptui.Select{
+			Label:     fmt.Sprintf("File %s already exists. Do you want to overwrite it?", result),
+			Items:     []string{"overwrite", "cancel"},
+			Templates: selectTemplateBuilder("Overwrite", "", ""),
+		})
+		if err != nil {
+			return err
+		}
+		if overwrite == "cancel" {
+			return fmt.Errorf("cancelled by user")
+		}
+	}
+
 	cli.Output = result
-
-	if cli.Overwrite {
-		// allow overwrite
-		return nil
-	}
-
-	_, result, err = cli.runner.Select(promptui.Select{
-		Label: "Output path already exists. Do you want to overwrite?",
-		Items: []string{"overwrite", "abort"},
-	})
-	if err != nil {
-		return err
-	}
-	if result == "abort" {
-		return fmt.Errorf("aborted, overwrite does not allowed")
-	}
-	cli.Overwrite = true
 	return nil
 }

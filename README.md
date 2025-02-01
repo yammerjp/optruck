@@ -115,7 +115,6 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 
 ## TODO
 
-- [ ] Add tests for interactive mode
 - [ ] More descriptive error messages to help user
 - [ ] Fix logging
 - [ ] Add tests for kube client

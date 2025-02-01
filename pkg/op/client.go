@@ -7,9 +7,6 @@ type ExecutableClient struct {
 }
 
 func NewExecutableClient(exec execPackage.Interface) *ExecutableClient {
-	if exec == nil {
-		exec = execPackage.New()
-	}
 	return &ExecutableClient{
 		exec: exec,
 	}
@@ -21,9 +18,6 @@ type AccountClient struct {
 }
 
 func NewAccountClient(account string, exec execPackage.Interface) *AccountClient {
-	if exec == nil {
-		exec = execPackage.New()
-	}
 	return &AccountClient{
 		ExecutableClient: *NewExecutableClient(exec),
 		Account:          account,

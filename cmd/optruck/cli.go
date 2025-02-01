@@ -1,5 +1,9 @@
 package optruck
 
+import (
+	execPackage "k8s.io/utils/exec"
+)
+
 type InteractiveFlag bool
 
 type CLI struct {
@@ -25,4 +29,5 @@ type CLI struct {
 	Interactive InteractiveFlag `name:"interactive" help:"Enable interactive mode for selecting the item, account, and vault." short:"i"`
 
 	runner InteractiveRunner
+	exec   execPackage.Interface
 }
