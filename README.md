@@ -118,7 +118,6 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 - [ ] Fix default output path
 - [ ] More descriptive error messages to help user
 - [ ] Fix logging
-- [ ] Add tests for kube client
 - [ ] E2E testing (with dummy commands(kubectl, op))
 - [ ] Register kubernetes secret base64 decoded data as 1Password item and mark it as 'decoded'
 - [ ] Support more data source of kubernetes secret (not only type Opaque)
