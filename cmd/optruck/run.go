@@ -8,7 +8,6 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/manifoldco/promptui"
-	"github.com/yammerjp/optruck/pkg/actions"
 )
 
 func Run() {
@@ -24,30 +23,31 @@ func Run() {
 	}
 }
 
-func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error) {
-	if cli.Interactive {
-		cli.runner = &InteractiveRunnerImpl{}
-		if err = cli.SetOptionsInteractively(); err != nil {
-			return nil, err
-		}
-		var cmds []string
-		cmds, err = cli.buildResultCommand()
-		if err != nil {
-			return nil, err
-		}
-		defer func() {
-			if err == nil {
-				err = cli.confirmToProceed(cmds)
-			}
-		}()
-	}
-	return cli.build()
-}
-
 func (cli *CLI) Run() error {
 	utilLogger.SetDefaultLogger(cli.LogLevel)
 
-	action, err := cli.buildOrBuildWithInteractive()
+	if cli.Interactive {
+		cli.runner = &InteractiveRunnerImpl{}
+		if err := cli.SetOptionsInteractively(); err != nil {
+			return err
+		}
+		var cmds []string
+		cmds, err := cli.buildResultCommand()
+		if err != nil {
+			return err
+		}
+		action, err := cli.build()
+		if err != nil {
+			return err
+		}
+		err = cli.confirmToProceed(cmds)
+		if err != nil {
+			return err
+		}
+		return action.Run()
+	}
+
+	action, err := cli.build()
 	if err != nil {
 		return err
 	}

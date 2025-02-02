@@ -362,6 +362,7 @@ func (cli *CLI) setDestInteractively() error {
 			return nil
 		},
 		Templates: promptTemplateBuilder("Output Path", ""),
+		Default:   defaultOutputPath(cli.K8sSecret),
 	})
 	if err != nil {
 		return err
