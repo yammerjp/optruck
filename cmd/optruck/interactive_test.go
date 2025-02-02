@@ -255,9 +255,8 @@ func TestSetDataSourceInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
-			err := tt.cli.setDataSourceInteractively()
+			err := tt.cli.setDataSourceInteractively(*interactive.NewRunner(tt.mock))
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
@@ -349,9 +348,8 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
-			err := tt.cli.setTargetInteractively()
+			err := tt.cli.setTargetInteractively(*interactive.NewRunner(tt.mock))
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
@@ -446,9 +444,8 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
-			err := tt.cli.setTargetInteractively()
+			err := tt.cli.setTargetInteractively(*interactive.NewRunner(tt.mock))
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
@@ -548,9 +545,8 @@ func TestSetTargetItemInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
-			err := tt.cli.setTargetInteractively()
+			err := tt.cli.setTargetInteractively(*interactive.NewRunner(tt.mock))
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
@@ -649,8 +645,7 @@ func TestSetDestInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = interactive.NewRunner(tt.mock)
-			err := tt.cli.setDestInteractively()
+			err := tt.cli.setDestInteractively(*interactive.NewRunner(tt.mock))
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")

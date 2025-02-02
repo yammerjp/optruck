@@ -24,8 +24,8 @@ func (cli *CLI) Run() error {
 	utilLogger.SetDefaultLogger(cli.LogLevel)
 
 	if cli.Interactive {
-		cli.runner = interactive.NewImplRunner()
-		if err := cli.SetOptionsInteractively(); err != nil {
+		runner := *interactive.NewImplRunner()
+		if err := cli.SetOptionsInteractively(runner); err != nil {
 			return err
 		}
 		var cmds []string
@@ -37,7 +37,7 @@ func (cli *CLI) Run() error {
 		if err != nil {
 			return err
 		}
-		err = cli.runner.Confirm(cmds)
+		err = runner.Confirm(cmds)
 		if err != nil {
 			return err
 		}

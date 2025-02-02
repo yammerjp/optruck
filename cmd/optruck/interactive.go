@@ -7,33 +7,33 @@ import (
 	"github.com/yammerjp/optruck/internal/util/interactive"
 )
 
-func (cli *CLI) SetOptionsInteractively() error {
-	if err := cli.setDataSourceInteractively(); err != nil {
+func (cli *CLI) SetOptionsInteractively(runner interactive.Runner) error {
+	if err := cli.setDataSourceInteractively(runner); err != nil {
 		return err
 	}
-	if err := cli.setTargetInteractively(); err != nil {
+	if err := cli.setTargetInteractively(runner); err != nil {
 		return err
 	}
-	if err := cli.setDestInteractively(); err != nil {
+	if err := cli.setDestInteractively(runner); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (cli *CLI) setDataSourceInteractively() error {
+func (cli *CLI) setDataSourceInteractively(runner interactive.Runner) error {
 	if cli.EnvFile != "" || cli.K8sSecret != "" {
 		slog.Debug("data source already set", "envFile", cli.EnvFile, "k8sSecret", cli.K8sSecret)
 		// already set
 		return nil
 	}
-	ds, err := cli.runner.SelectDataSource()
+	ds, err := runner.SelectDataSource()
 	if err != nil {
 		return err
 	}
 	switch ds {
 	case interactive.DataSourceEnvFile:
 		slog.Debug("setting env file path")
-		envFilePath, err := cli.runner.PromptEnvFilePath()
+		envFilePath, err := runner.PromptEnvFilePath()
 		if err != nil {
 			return err
 		}
@@ -41,14 +41,14 @@ func (cli *CLI) setDataSourceInteractively() error {
 	case interactive.DataSourceK8sSecret:
 		slog.Debug("setting k8s secret")
 		if cli.K8sNamespace == "" {
-			namespace, err := cli.runner.SelectKubeNamespace()
+			namespace, err := runner.SelectKubeNamespace()
 			if err != nil {
 				return err
 			}
 			cli.K8sNamespace = namespace
 		}
 		if cli.K8sSecret == "" {
-			secret, err := cli.runner.SelectKubeSecret(cli.K8sNamespace)
+			secret, err := runner.SelectKubeSecret(cli.K8sNamespace)
 			if err != nil {
 				return err
 			}
@@ -60,9 +60,9 @@ func (cli *CLI) setDataSourceInteractively() error {
 	return nil
 }
 
-func (cli *CLI) setTargetInteractively() error {
+func (cli *CLI) setTargetInteractively(runner interactive.Runner) error {
 	if cli.Account == "" {
-		account, err := cli.runner.SelectOpAccount()
+		account, err := runner.SelectOpAccount()
 		if err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func (cli *CLI) setTargetInteractively() error {
 	}
 
 	if cli.Vault == "" {
-		vault, err := cli.runner.SelectOpVault(cli.Account)
+		vault, err := runner.SelectOpVault(cli.Account)
 		if err != nil {
 			return err
 		}
@@ -78,13 +78,13 @@ func (cli *CLI) setTargetInteractively() error {
 	}
 	if cli.Item == "" {
 		if cli.Overwrite {
-			overwrite, err := cli.runner.SelectOpItemOverwriteOrNot()
+			overwrite, err := runner.SelectOpItemOverwriteOrNot()
 			if err != nil {
 				return err
 			}
 			cli.Overwrite = overwrite
 		} else {
-			itemName, err := cli.runner.PromptOpItemName(cli.Account, cli.Vault)
+			itemName, err := runner.PromptOpItemName(cli.Account, cli.Vault)
 			if err != nil {
 				return err
 			}
@@ -94,12 +94,12 @@ func (cli *CLI) setTargetInteractively() error {
 	return nil
 }
 
-func (cli *CLI) setDestInteractively() error {
+func (cli *CLI) setDestInteractively(runner interactive.Runner) error {
 	if cli.Output != "" {
 		// already set
 		return nil
 	}
-	outputPath, err := cli.runner.PromptOutputPath(cli.K8sSecret)
+	outputPath, err := runner.PromptOutputPath(cli.K8sSecret)
 	if err != nil {
 		return err
 	}
