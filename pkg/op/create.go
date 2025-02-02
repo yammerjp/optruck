@@ -1,9 +1,6 @@
 package op
 
 import (
-	"bytes"
-	"encoding/json"
-	"os"
 	"sort"
 )
 
@@ -45,26 +42,10 @@ func (c *ItemClient) CreateItem(envPairs map[string]string) (*SecretReference, e
 		})
 	}
 
-	reqStr, err := json.Marshal(req)
-	if err != nil {
-		return nil, err
-	}
-
 	cmd := c.BuildCommand("item", "create")
-	cmd.SetStdin(bytes.NewBuffer(reqStr))
-	var stdout bytes.Buffer
-	cmd.SetStdout(&stdout)
-	cmd.SetStderr(os.Stderr)
-
-	err = cmd.Run()
-	if err != nil {
-		return nil, err
-	}
-
 	var resp ItemResponse
-	if err := json.Unmarshal(stdout.Bytes(), &resp); err != nil {
+	if err := cmd.RunWithJSON(req, &resp); err != nil {
 		return nil, err
 	}
-
 	return c.BuildSecretReference(resp), nil
 }

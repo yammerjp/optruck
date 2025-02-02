@@ -144,7 +144,7 @@ func TestGetNamespaces(t *testing.T) {
 			name:          "empty",
 			mockStdout:    "",
 			exitStatus:    0,
-			expectedNames: []string{""},
+			expectedNames: []string{},
 		},
 		{
 			name:        "error",
@@ -237,7 +237,7 @@ func TestGetSecrets(t *testing.T) {
 			namespace:     "default",
 			mockStdout:    "",
 			exitStatus:    0,
-			expectedNames: []string{""},
+			expectedNames: []string{},
 		},
 		{
 			name:        "error",

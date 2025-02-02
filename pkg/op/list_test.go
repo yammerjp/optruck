@@ -106,18 +106,12 @@ func TestListItems(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stdout := &fakeWriter{}
-			stderr := &fakeWriter{}
 			fcmd := &testingexec.FakeCmd{
-				Stdout: stdout,
-				Stderr: stderr,
 				RunScript: []testingexec.FakeAction{
 					func() ([]byte, []byte, error) {
 						if tt.mockExitStatus != 0 {
-							stderr.Write([]byte(tt.mockStderr))
 							return []byte(tt.mockStdout), []byte(tt.mockStderr), &testingexec.FakeExitError{Status: tt.mockExitStatus}
 						}
-						stdout.Write([]byte(tt.mockStdout))
 						return []byte(tt.mockStdout), []byte(tt.mockStderr), nil
 					},
 				},

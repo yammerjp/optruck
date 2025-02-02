@@ -1,10 +1,5 @@
 package op
 
-import (
-	"bytes"
-	"encoding/json"
-)
-
 type Vault struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
@@ -16,16 +11,8 @@ type Vault struct {
 
 func (c *AccountClient) ListVaults() ([]Vault, error) {
 	cmd := c.BuildCommand("vault", "list")
-	stdoutBuffer := bytes.NewBuffer(nil)
-	stderrBuffer := bytes.NewBuffer(nil)
-	cmd.SetStdout(stdoutBuffer)
-	cmd.SetStderr(stderrBuffer)
-	if err := cmd.Run(); err != nil {
-		return nil, err
-	}
-
 	var resp []Vault
-	if err := json.Unmarshal(stdoutBuffer.Bytes(), &resp); err != nil {
+	if err := cmd.RunWithJSON(nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil

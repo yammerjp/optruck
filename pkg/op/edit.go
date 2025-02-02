@@ -1,9 +1,6 @@
 package op
 
 import (
-	"bytes"
-	"encoding/json"
-	"os"
 	"sort"
 )
 
@@ -40,24 +37,9 @@ func (c *ItemClient) EditItem(envPairs map[string]string) (*SecretReference, err
 		})
 	}
 
-	reqStr, err := json.Marshal(req)
-	if err != nil {
-		return nil, err
-	}
-
-	var stdout bytes.Buffer
 	cmd := c.BuildCommand("item", "edit", c.ItemName)
-	cmd.SetStdin(bytes.NewBuffer(reqStr))
-	cmd.SetStdout(&stdout)
-	cmd.SetStderr(os.Stderr)
-
-	err = cmd.Run()
-	if err != nil {
-		return nil, err
-	}
-
 	var resp ItemResponse
-	if err := json.Unmarshal(stdout.Bytes(), &resp); err != nil {
+	if err := cmd.RunWithJSON(req, &resp); err != nil {
 		return nil, err
 	}
 
