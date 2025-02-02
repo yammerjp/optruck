@@ -8,19 +8,40 @@ import (
 	"k8s.io/utils/exec"
 )
 
-type Command struct {
+type CommandConfig struct {
 	exec   exec.Interface
 	logger *slog.Logger
-	bin    string
-	args   []string
+}
+
+func NewCommandConfig(exec exec.Interface, logger *slog.Logger) CommandConfig {
+	return CommandConfig{
+		exec:   exec,
+		logger: logger,
+	}
+}
+
+type Command struct {
+	CommandConfig
+	bin  string
+	args []string
+}
+
+func (cc *CommandConfig) Command(bin string, args ...string) *Command {
+	return &Command{
+		CommandConfig: *cc,
+		bin:           bin,
+		args:          args,
+	}
 }
 
 func NewCommand(exec exec.Interface, logger *slog.Logger, bin string, args ...string) *Command {
 	return &Command{
-		exec:   exec,
-		logger: logger,
-		bin:    bin,
-		args:   args,
+		CommandConfig: CommandConfig{
+			exec:   exec,
+			logger: logger,
+		},
+		bin:  bin,
+		args: args,
 	}
 }
 

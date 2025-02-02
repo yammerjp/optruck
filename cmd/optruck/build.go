@@ -86,7 +86,7 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 		}
 	}
 
-	return op.NewItemClient(cli.Account, cli.Vault, cli.Item, cli.exec, cli.logger), nil
+	return op.NewExecutableClient(cli.exec, cli.logger).BuildItemClient(cli.Account, cli.Vault, cli.Item), nil
 }
 
 func (cli *CLI) buildDataSource() (datasources.Source, error) {

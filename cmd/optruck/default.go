@@ -27,8 +27,9 @@ func (cli *CLI) SetDefaultIfEmpty() error {
 }
 
 func (cli *CLI) setDefaultTargetIfNotSet() error {
+	executableClient := op.NewExecutableClient(cli.exec, cli.logger)
 	if cli.Account == "" {
-		accounts, err := op.NewExecutableClient(cli.exec, cli.logger).ListAccounts()
+		accounts, err := executableClient.ListAccounts()
 		if err != nil {
 			return fmt.Errorf("failed to list accounts: %w", err)
 		}
@@ -39,7 +40,7 @@ func (cli *CLI) setDefaultTargetIfNotSet() error {
 	}
 
 	if cli.Vault == "" {
-		vaults, err := op.NewAccountClient(cli.Account, cli.exec, cli.logger).ListVaults()
+		vaults, err := executableClient.BuildAccountClient(cli.Account).ListVaults()
 		if err != nil {
 			return fmt.Errorf("failed to list vaults: %w", err)
 		}

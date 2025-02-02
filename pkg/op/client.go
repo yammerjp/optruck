@@ -3,18 +3,23 @@ package op
 import (
 	"log/slog"
 
-	execPackage "k8s.io/utils/exec"
+	optruckexec "github.com/yammerjp/optruck/pkg/exec"
+	"k8s.io/utils/exec"
 )
 
 type ExecutableClient struct {
-	exec   execPackage.Interface
-	logger *slog.Logger
+	optruckexec.CommandConfig
 }
 
-func NewExecutableClient(exec execPackage.Interface, logger *slog.Logger) *ExecutableClient {
+func NewExecutableClient(exec exec.Interface, logger *slog.Logger) *ExecutableClient {
 	return &ExecutableClient{
-		exec:   exec,
-		logger: logger,
+		CommandConfig: optruckexec.NewCommandConfig(exec, logger),
+	}
+}
+
+func NewExecutableClientFromConfig(exec optruckexec.CommandConfig) *ExecutableClient {
+	return &ExecutableClient{
+		CommandConfig: exec,
 	}
 }
 
@@ -23,9 +28,9 @@ type AccountClient struct {
 	Account string
 }
 
-func NewAccountClient(account string, exec execPackage.Interface, logger *slog.Logger) *AccountClient {
+func (c *ExecutableClient) BuildAccountClient(account string) *AccountClient {
 	return &AccountClient{
-		ExecutableClient: *NewExecutableClient(exec, logger),
+		ExecutableClient: *c,
 		Account:          account,
 	}
 }
@@ -35,9 +40,9 @@ type VaultClient struct {
 	Vault string
 }
 
-func NewVaultClient(account, vault string, exec execPackage.Interface, logger *slog.Logger) *VaultClient {
+func (c *ExecutableClient) BuildVaultClient(account, vault string) *VaultClient {
 	return &VaultClient{
-		AccountClient: *NewAccountClient(account, exec, logger),
+		AccountClient: *c.BuildAccountClient(account),
 		Vault:         vault,
 	}
 }
@@ -47,9 +52,9 @@ type ItemClient struct {
 	ItemName string
 }
 
-func NewItemClient(account, vault, itemName string, exec execPackage.Interface, logger *slog.Logger) *ItemClient {
+func (c *ExecutableClient) BuildItemClient(account, vault, itemName string) *ItemClient {
 	return &ItemClient{
-		VaultClient: *NewVaultClient(account, vault, exec, logger),
+		VaultClient: *c.BuildVaultClient(account, vault),
 		ItemName:    itemName,
 	}
 }

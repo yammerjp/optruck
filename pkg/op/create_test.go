@@ -204,7 +204,7 @@ func TestCreateItem(t *testing.T) {
 			}
 			fakeLogger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-			client := NewItemClient(tt.account, tt.vault, tt.itemName, fakeExec, fakeLogger)
+			client := NewExecutableClient(fakeExec, fakeLogger).BuildItemClient(tt.account, tt.vault, tt.itemName)
 
 			got, err := client.CreateItem(tt.envPairs)
 			if err != tt.wantErr {

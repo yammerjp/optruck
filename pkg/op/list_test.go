@@ -144,7 +144,7 @@ func TestListItems(t *testing.T) {
 			}
 			fakeLogger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-			client := NewVaultClient(tt.account, tt.vault, fakeExec, fakeLogger)
+			client := NewExecutableClient(fakeExec, fakeLogger).BuildVaultClient(tt.account, tt.vault)
 
 			got, err := client.ListItems()
 			if err != tt.wantErr {

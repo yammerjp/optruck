@@ -6,18 +6,18 @@ import (
 
 func (c *ExecutableClient) BuildCommand(args ...string) *optruckexec.Command {
 	args = append(args, "--format", "json")
-	return optruckexec.NewCommand(c.exec, c.logger, "op", args...)
+	return c.Command("op", args...)
 }
 
 func (c *AccountClient) BuildCommand(args ...string) *optruckexec.Command {
 	args = append(args, "--account", c.Account)
 	args = append(args, "--format", "json")
-	return optruckexec.NewCommand(c.exec, c.logger, "op", args...)
+	return c.Command("op", args...)
 }
 
 func (c *VaultClient) BuildCommand(args ...string) *optruckexec.Command {
 	args = append(args, "--account", c.Account)
 	args = append(args, "--vault", c.Vault)
 	args = append(args, "--format", "json")
-	return optruckexec.NewCommand(c.exec, c.logger, "op", args...)
+	return c.Command("op", args...)
 }

@@ -99,7 +99,7 @@ func TestListVaults(t *testing.T) {
 			}
 			fakeLogger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-			client := NewAccountClient(tt.account, fakeExec, fakeLogger)
+			client := NewExecutableClient(fakeExec, fakeLogger).BuildAccountClient(tt.account)
 
 			got, err := client.ListVaults()
 			if (err != nil) != tt.wantErr {
