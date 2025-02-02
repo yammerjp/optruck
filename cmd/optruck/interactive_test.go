@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -594,7 +595,55 @@ func TestSetTargetItemInteractively(t *testing.T) {
 	}
 }
 
+func TestValidateOutputPath(t *testing.T) {
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+	}{
+		{
+			name:    "valid path",
+			path:    "output.env",
+			wantErr: false,
+		},
+		{
+			name:    "empty path",
+			path:    "",
+			wantErr: true,
+		},
+		{
+			name:    "path is a directory",
+			path:    ".",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateOutputPath(tt.path)
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error but got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
 func TestSetDestInteractively(t *testing.T) {
+	// Create a temporary file for testing
+	tmpFile := "existing.env"
+	f, err := os.Create(tmpFile)
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %v", err)
+	}
+	f.Close()
+	defer os.Remove(tmpFile)
+
 	tests := []struct {
 		name      string
 		cli       *CLI
@@ -667,6 +716,41 @@ func TestSetDestInteractively(t *testing.T) {
 					err   error
 				}{
 					{"", fmt.Errorf("output path is required")},
+				},
+			},
+			wantErr:   true,
+			wantValue: "",
+		},
+		{
+			name: "cancel overwrite",
+			cli:  &CLI{},
+			mock: &MockInteractiveRunner{
+				inputResponses: []struct {
+					value string
+					err   error
+				}{
+					{"existing.env", nil},
+				},
+				selectResponses: []struct {
+					index int
+					value string
+					err   error
+				}{
+					{1, "cancel", nil},
+				},
+			},
+			wantErr:   true,
+			wantValue: "",
+		},
+		{
+			name: "path is a directory",
+			cli:  &CLI{},
+			mock: &MockInteractiveRunner{
+				inputResponses: []struct {
+					value string
+					err   error
+				}{
+					{".", fmt.Errorf("output path is already created as a directory")},
 				},
 			},
 			wantErr:   true,

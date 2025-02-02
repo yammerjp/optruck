@@ -329,6 +329,9 @@ func (cli *CLI) setItemByInput(currentItems []op.SecretReference) error {
 }
 
 func validateOutputPath(path string) error {
+	if path == "" {
+		return errors.New("output path is required")
+	}
 	stat, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -349,18 +352,9 @@ func (cli *CLI) setDestInteractively() error {
 	}
 
 	result, err := cli.runner.Input(promptui.Prompt{
-		Label: "Enter output path: ",
-		Validate: func(input string) error {
-			if input == "" {
-				return fmt.Errorf("output path is required")
-			}
-			// Check if the directory exists
-			dir := filepath.Dir(input)
-			if _, err := os.Stat(dir); os.IsNotExist(err) {
-				return fmt.Errorf("directory %s does not exist", dir)
-			}
-			return nil
-		},
+		Label:     "Enter output path: ",
+		Validate:  validateOutputPath,
+		Default:   defaultOutputPath(cli.K8sSecret),
 		Templates: promptTemplateBuilder("Output Path", ""),
 	})
 	if err != nil {
