@@ -3,15 +3,12 @@ package optruck
 import (
 	"fmt"
 
+	"github.com/yammerjp/optruck/internal/util/interactiverunner"
 	"github.com/yammerjp/optruck/pkg/actions"
 	"github.com/yammerjp/optruck/pkg/datasources"
 	"github.com/yammerjp/optruck/pkg/kube"
 	"github.com/yammerjp/optruck/pkg/op"
 	"github.com/yammerjp/optruck/pkg/output"
-)
-
-const (
-	defaultEnvFilePath = ".env"
 )
 
 func (cli *CLI) build() (actions.Action, error) {
@@ -81,7 +78,7 @@ func (cli *CLI) buildDataSource() (datasources.Source, error) {
 		}, nil
 	}
 	if cli.EnvFile == "" {
-		cli.EnvFile = defaultEnvFilePath
+		cli.EnvFile = interactiverunner.DefaultEnvFilePath
 	}
 	return &datasources.EnvFileSource{Path: cli.EnvFile}, nil
 }
