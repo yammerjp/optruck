@@ -1,16 +1,8 @@
 # optruck
 
-**Note:** This project is currently under active development and not yet stable.
+optruck is a CLI tool for managing secrets and creating templates with 1Password. It can upload secrets from .env files (default) or Kubernetes Secrets to 1Password, and generate templates for restoring them later.
 
-optruck is a CLI tool that streamlines secret management with 1Password by providing a simple way to upload secrets and generate restoration templates.
-
-## Features
-
-- Upload secrets from environment files or Kubernetes Secrets to 1Password
-- Generate restoration templates from 1Password items
-- Support for both environment file and Kubernetes Secret formats
-
-### Prerequisites
+## Prerequisites
 
 1. Install [1Password CLI](https://1password.com/downloads/command-line/)
    - If using 1Password GUI app with CLI integration enabled, you're already signed in
@@ -21,99 +13,80 @@ optruck is a CLI tool that streamlines secret management with 1Password by provi
 go install github.com/yammerjp/optruck@latest
 ```
 
-### Quick Start
+## Quick Start
 
-1. Create a `.env` file with your secrets:
-```bash
-# .env
-API_KEY=your-secret-api-key
-DATABASE_URL=your-database-url
-```
+The easiest way to get started is to use interactive mode:
 
-2. Run optruck in interactive mode:
 ```bash
 optruck -i
 ```
 
-This will guide you through:
-1. Input selection:
-   - Select a data source (local file or Kubernetes secret)
-   - Choose where to store secrets in 1Password
-   - Select template file location
-2. Review your selections
-3. Execute:
-   - Upload secrets to 1Password
-   - Generate restoration template file
+This will guide you through selecting:
+- The item name in 1Password
+- The 1Password account and vault
+- The data source (local file or Kubernetes secret)
 
-3. To restore secrets later, use the generated template with 1Password CLI:
+## Usage
+
 ```bash
-op inject -i .env.1password -o .env
+optruck <item> [options]
 ```
 
-## Common Use Cases
+### Arguments
 
-1. Mirror secrets from a .env file (default behavior):
+- `<item>`: Name to save the secrets as in 1Password. Required unless --interactive is used.
+
+### Target Options
+
+- `--vault <value>`: 1Password Vault (e.g., "Development" or "abcd1234efgh5678")
+- `--account <value>`: 1Password account (e.g., "my.1password.com" or "my.1password.example.com")
+- `--overwrite`: Overwrite the existing 1Password item if it exists
+
+### Data Source Options
+
+- `--env-file <path>`: Path to the .env file containing secrets (default: ".env")
+- `--k8s-secret <name>`: Name of the Kubernetes Secret to fetch secrets from
+- `--k8s-namespace <name>`: Kubernetes namespace for --k8s-secret (default: "default")
+
+### Output Options
+
+- `--output <path>`: Path to save the template file (default: ".env.1password" or "<secret-name>-secret.yaml.1password")
+
+### General Options
+
+- `-i, --interactive`: Enable interactive mode to select item, account, and vault
+- `--log-level <level>`: Set the log level (debug|info|warn|error|none). Defaults to "none"
+- `-h, --help`: Show help for optruck
+- `-v, --version`: Show the version of optruck
+
+## Examples
+
+1. Start in interactive mode (recommended for first use):
+```bash
+optruck --interactive
+```
+
+2. Basic usage with .env file (default source):
 ```bash
 optruck MySecrets --vault MyVault --account my.1password.com
 ```
 
-2. Use a custom .env file:
+3. Use a specific .env file:
 ```bash
 optruck MySecrets --env-file /path/to/custom.env
 ```
 
-3. Upload Kubernetes Secret and generate K8s template:
-```bash
-optruck MySecrets --k8s-secret my-secret --output kube-secret.yaml.1password
-```
-
-4. Specify Kubernetes namespace:
+4. Upload from Kubernetes Secret:
 ```bash
 optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
+# -> Generates "my-secret-secret.yaml.1password"
 ```
-
-## Advanced Usage
-
-### Data Source Options (default: --env-file)
-
-- `--env-file <path>`: Path to the .env file containing secrets (default: ".env")
-- `--k8s-secret <name>`: Name of the Kubernetes Secret to fetch secrets from
-- `--k8s-namespace <name>`: Kubernetes namespace (default: "default")
-
-### Output Options
-
-- `--output <path>`: Path to save the restoration template file (default: ".env.1password")
-- `--output-format <env|k8s>`: Format of the output file
-  - "env" for environment variable files
-  - "k8s" for Kubernetes Secret manifests
-
-### General Options
-
-- `--vault <value>`: 1Password Vault (e.g., "Development" or "abcd1234efgh5678")
-- `--account <value>`: 1Password account (e.g., "my.1password.com" or "my.1password.example.com")
-- `--overwrite`: Overwrite existing 1Password item and output file
-- `-i, --interactive`: Enable interactive mode for selecting item, account, and vault
-- `--log-level <level>`: Set log level (debug|info|warn|error)
-- `-h, --help`: Show help
-- `--version`: Show version
 
 ## Notes
 
-- Use `--overwrite` to update existing 1Password items 
-- When using Kubernetes options, ensure kubectl is properly configured
-- The tool requires appropriate 1Password CLI configuration and authentication
+- op (1Password CLI) must be installed and configured
+- When using Kubernetes options, ensure kubectl is configured properly
 
 ## License
 
 [MIT](LICENSE)
-
-
-## TODO
-
-- [ ] More descriptive error messages to help user
-- [ ] Fix logging
-- [ ] E2E testing (with dummy commands(kubectl, op))
-- [ ] Register kubernetes secret base64 decoded data as 1Password item and mark it as 'decoded'
-- [ ] Support more data source of kubernetes secret (not only type Opaque)
-- [ ] Allow to select a part of secret on .env file to upload
-- [ ] Add to check op cli and kubectl are installed
