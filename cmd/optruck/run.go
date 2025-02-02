@@ -23,31 +23,32 @@ func Run() {
 func (cli *CLI) Run() error {
 	utilLogger.SetDefaultLogger(cli.LogLevel)
 
+	var confirmation func() error
+
 	if cli.Interactive {
 		runner := *interactive.NewImplRunner()
 		if err := cli.SetOptionsInteractively(runner); err != nil {
 			return err
 		}
-		var cmds []string
 		cmds, err := cli.buildResultCommand()
 		if err != nil {
 			return err
 		}
-		action, err := cli.build()
-		if err != nil {
-			return err
+		confirmation = func() error {
+			return runner.Confirm(cmds)
 		}
-		err = runner.Confirm(cmds)
-		if err != nil {
-			return err
+	} else {
+		confirmation = func() error {
+			// confirmed by default
+			return nil
 		}
-		return action.Run()
 	}
 
-	action, err := cli.build()
+	action, err := cli.build(confirmation)
 	if err != nil {
 		return err
 	}
+
 	return action.Run()
 }
 

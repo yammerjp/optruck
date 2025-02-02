@@ -77,12 +77,19 @@ func (cli *CLI) setTargetInteractively(runner interactive.Runner) error {
 		cli.Vault = vault
 	}
 	if cli.Item == "" {
-		if cli.Overwrite {
+		if !cli.Overwrite {
 			overwrite, err := runner.SelectOpItemOverwriteOrNot()
 			if err != nil {
 				return err
 			}
 			cli.Overwrite = overwrite
+		}
+		if cli.Overwrite {
+			itemName, err := runner.SelectOpItemName(cli.Account, cli.Vault)
+			if err != nil {
+				return err
+			}
+			cli.Item = itemName
 		} else {
 			itemName, err := runner.PromptOpItemName(cli.Account, cli.Vault)
 			if err != nil {

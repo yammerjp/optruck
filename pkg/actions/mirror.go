@@ -13,10 +13,16 @@ type MirrorConfig struct {
 	DataSource   datasources.Source
 	Dest         output.Dest
 	Overwrite    bool
+	Confirmation func() error
 }
 
 func (config MirrorConfig) Run() error {
 	slog.Debug("Starting mirror action for item", "item", config.OpItemClient.ItemName)
+
+	if err := config.Confirmation(); err != nil {
+		slog.Error("failed to confirm", "error", err)
+		return err
+	}
 
 	secrets, err := config.DataSource.FetchSecrets()
 	if err != nil {

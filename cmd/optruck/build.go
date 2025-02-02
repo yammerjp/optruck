@@ -11,7 +11,7 @@ import (
 	"github.com/yammerjp/optruck/pkg/output"
 )
 
-func (cli *CLI) build() (actions.Action, error) {
+func (cli *CLI) build(confirmation func() error) (actions.Action, error) {
 	ds, err := cli.buildDataSource()
 	if err != nil {
 		return nil, err
@@ -32,6 +32,7 @@ func (cli *CLI) build() (actions.Action, error) {
 		DataSource:   ds,
 		Dest:         dest,
 		Overwrite:    cli.Overwrite,
+		Confirmation: confirmation,
 	}, nil
 }
 

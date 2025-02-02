@@ -509,9 +509,13 @@ func TestSetTargetItemInteractively(t *testing.T) {
 					{0, "yes", nil},
 				},
 			},
-			mockExec:  NewMockExec(),
+			mockExec: func() *MockExec {
+				m := NewMockExec()
+				m.outputs["op item list --account my.1password.com --vault vault1 --format json"] = `[{"id": "item1", "title": "Item 1"}]`
+				return m
+			}(),
 			wantErr:   false,
-			wantValue: "",
+			wantValue: "item1",
 		},
 		{
 			name: "item already set",
