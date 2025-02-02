@@ -11,7 +11,7 @@ import (
 	"github.com/yammerjp/optruck/pkg/output"
 )
 
-func (cli *CLI) build(confirmation func() error) (actions.Action, error) {
+func (cli *CLI) buildAction(confirmation func() error) (actions.Action, error) {
 	ds, err := cli.buildDataSource()
 	if err != nil {
 		return nil, err
@@ -69,8 +69,7 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 func (cli *CLI) buildDataSource() (datasources.Source, error) {
 	if cli.K8sSecret != "" {
 		if cli.K8sNamespace == "" {
-			// default namespace
-			cli.K8sNamespace = "default"
+			cli.K8sNamespace = interactive.DefaultKubernetesNamespace
 		}
 		return &datasources.K8sSecretSource{
 			Namespace:  cli.K8sNamespace,

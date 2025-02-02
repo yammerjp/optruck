@@ -7,6 +7,8 @@ import (
 	"github.com/yammerjp/optruck/pkg/kube"
 )
 
+const DefaultKubernetesNamespace = "default"
+
 func (r Runner) SelectKubeNamespace() (string, error) {
 	kubeClient := kube.NewClient()
 	namespaces, err := kubeClient.GetNamespaces()
