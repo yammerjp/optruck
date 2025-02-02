@@ -38,14 +38,14 @@ func (cli *CLI) setDataSourceInteractively() error {
 		// already set
 		return nil
 	}
-	ds, err := interactive.NewDataSourceSelector(cli.runner).Select()
+	ds, err := cli.runner.SelectDataSource()
 	if err != nil {
 		return err
 	}
 	switch ds {
 	case interactive.DataSourceEnvFile:
 		slog.Debug("setting env file path")
-		envFilePath, err := interactive.NewEnvFilePrompter(cli.runner).Prompt()
+		envFilePath, err := cli.runner.PromptEnvFilePath()
 		if err != nil {
 			return err
 		}
@@ -53,14 +53,14 @@ func (cli *CLI) setDataSourceInteractively() error {
 	case interactive.DataSourceK8sSecret:
 		slog.Debug("setting k8s secret")
 		if cli.K8sNamespace == "" {
-			namespace, err := interactive.NewKubeNamespaceSelector(cli.runner).Select()
+			namespace, err := cli.runner.SelectKubeNamespace()
 			if err != nil {
 				return err
 			}
 			cli.K8sNamespace = namespace
 		}
 		if cli.K8sSecret == "" {
-			secret, err := interactive.NewKubeSecretSelector(cli.runner, cli.K8sNamespace).Select()
+			secret, err := cli.runner.SelectKubeSecret(cli.K8sNamespace)
 			if err != nil {
 				return err
 			}

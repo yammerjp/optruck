@@ -24,7 +24,7 @@ func (cli *CLI) Run() error {
 	utilLogger.SetDefaultLogger(cli.LogLevel)
 
 	if cli.Interactive {
-		cli.runner = &interactive.RunnableImpl{}
+		cli.runner = interactive.NewImplRunner()
 		if err := cli.SetOptionsInteractively(); err != nil {
 			return err
 		}

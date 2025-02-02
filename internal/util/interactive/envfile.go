@@ -11,16 +11,8 @@ const (
 	DefaultEnvFilePath = ".env"
 )
 
-type EnvFilePrompter struct {
-	runner Runner
-}
-
-func NewEnvFilePrompter(runner Runner) *EnvFilePrompter {
-	return &EnvFilePrompter{runner: runner}
-}
-
-func (e *EnvFilePrompter) Prompt() (string, error) {
-	result, err := e.runner.Input(promptui.Prompt{
+func (r Runner) PromptEnvFilePath() (string, error) {
+	result, err := r.Input(promptui.Prompt{
 		Label:   "Enter env file path: ",
 		Default: DefaultEnvFilePath,
 		Validate: func(input string) error {

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	utilExec "github.com/yammerjp/optruck/internal/util/exec"
+	"github.com/yammerjp/optruck/internal/util/interactive"
 
 	"github.com/manifoldco/promptui"
 	"k8s.io/utils/exec"
@@ -254,7 +255,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = tt.mock
+			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
 			err := tt.cli.setDataSourceInteractively()
 			if tt.wantErr {
@@ -341,7 +342,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = tt.mock
+			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
 			err := tt.cli.setTargetAccountInteractively()
 			if tt.wantErr {
@@ -433,7 +434,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = tt.mock
+			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
 			err := tt.cli.setTargetVaultInteractively()
 			if tt.wantErr {
@@ -577,7 +578,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = tt.mock
+			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
 			err := tt.cli.setTargetItemInteractively()
 			if tt.wantErr {
@@ -678,7 +679,7 @@ func TestSetDestInteractively(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cli.runner = tt.mock
+			tt.cli.runner = interactive.NewRunner(tt.mock)
 			err := tt.cli.setDestInteractively()
 			if tt.wantErr {
 				if err == nil {

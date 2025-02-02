@@ -18,3 +18,15 @@ func (r *RunnableImpl) Select(prompt promptui.Select) (int, string, error) {
 func (r *RunnableImpl) Input(prompt promptui.Prompt) (string, error) {
 	return prompt.Run()
 }
+
+type Runner struct {
+	Runnable
+}
+
+func NewRunner(r Runnable) *Runner {
+	return &Runner{Runnable: r}
+}
+
+func NewImplRunner() *Runner {
+	return &Runner{Runnable: &RunnableImpl{}}
+}

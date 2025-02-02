@@ -22,15 +22,7 @@ func (ds DataSourceEnum) String() string {
 	}
 }
 
-type DataSourceSelector struct {
-	runner Runner
-}
-
-func NewDataSourceSelector(runner Runner) *DataSourceSelector {
-	return &DataSourceSelector{runner: runner}
-}
-
-func (ds *DataSourceSelector) Select() (DataSourceEnum, error) {
+func (r Runner) SelectDataSource() (DataSourceEnum, error) {
 	dataSources := []struct {
 		Label string
 		Value DataSourceEnum
@@ -38,7 +30,7 @@ func (ds *DataSourceSelector) Select() (DataSourceEnum, error) {
 		{Label: "env file", Value: DataSourceEnvFile},
 		{Label: "k8s secret", Value: DataSourceK8sSecret},
 	}
-	i, _, err := ds.runner.Select(promptui.Select{
+	i, _, err := r.Select(promptui.Select{
 		Label:     "Select data source: ",
 		Items:     dataSources,
 		Templates: SelectTemplateBuilder("Data Source", "Label", ""),

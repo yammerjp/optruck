@@ -7,49 +7,14 @@ import (
 	"github.com/yammerjp/optruck/pkg/kube"
 )
 
-type KubeNamespaceSelector struct {
-	runner Runnable
-}
-
-func NewKubeNamespaceSelector(runner Runnable) *KubeNamespaceSelector {
-	return &KubeNamespaceSelector{runner: runner}
-}
-
-func (k *KubeNamespaceSelector) Select() (string, error) {
+func (r Runner) SelectKubeSecret(namespace string) (string, error) {
 	kubeClient := kube.NewClient()
-	namespaces, err := kubeClient.GetNamespaces()
+	secrets, err := kubeClient.GetSecrets(namespace)
 	if err != nil {
 		return "", err
 	}
-
-	i, _, err := k.runner.Select(promptui.Select{
-		Label:     "Select Kubernetes Namespace: ",
-		Items:     namespaces,
-		Templates: SelectTemplateBuilder("Kubernetes Namespace", "", ""),
-	})
-	if err != nil {
-		return "", err
-	}
-	return namespaces[i], nil
-}
-
-type KubeSecretSelector struct {
-	runner    Runnable
-	namespace string
-}
-
-func NewKubeSecretSelector(runner Runnable, namespace string) *KubeSecretSelector {
-	return &KubeSecretSelector{runner: runner, namespace: namespace}
-}
-
-func (k *KubeSecretSelector) Select() (string, error) {
-	kubeClient := kube.NewClient()
-	secrets, err := kubeClient.GetSecrets(k.namespace)
-	if err != nil {
-		return "", err
-	}
-	i, _, err := k.runner.Select(promptui.Select{
-		Label:     fmt.Sprintf("Select kubernetes secret on namespace %s", k.namespace),
+	i, _, err := r.Select(promptui.Select{
+		Label:     fmt.Sprintf("Select kubernetes secret on namespace %s", namespace),
 		Items:     secrets,
 		Templates: SelectTemplateBuilder("Kubernetes Secret", "", ""),
 	})
