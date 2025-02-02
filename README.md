@@ -9,15 +9,6 @@ optruck is a CLI tool that streamlines secret management with 1Password by provi
 - Upload secrets from environment files or Kubernetes Secrets to 1Password
 - Generate restoration templates from 1Password items
 - Support for both environment file and Kubernetes Secret formats
-- Interactive mode for selecting items, accounts, and vaults
-
-## Installation
-
-```bash
-go install github.com/yammerjp/optruck@latest
-```
-
-## Getting Started
 
 ### Prerequisites
 
@@ -39,15 +30,20 @@ API_KEY=your-secret-api-key
 DATABASE_URL=your-database-url
 ```
 
-2. Upload secrets to 1Password and generate a template:
+2. Run optruck in interactive mode:
 ```bash
-optruck MySecrets --vault MyVault --account my.1password.com
+optruck -i
 ```
 
-This will:
-- Create a new item named "MySecrets" in your 1Password vault
-- Upload the secrets from `.env`
-- Generate a template file `.env.1password` for restoration
+This will guide you through:
+1. Input selection:
+   - Select a data source (local file or Kubernetes secret)
+   - Choose where to store secrets in 1Password
+   - Select template file location
+2. Review your selections
+3. Execute:
+   - Upload secrets to 1Password
+   - Generate restoration template file
 
 3. To restore secrets later, use the generated template with 1Password CLI:
 ```bash
@@ -68,7 +64,7 @@ optruck MySecrets --env-file /path/to/custom.env
 
 3. Upload Kubernetes Secret and generate K8s template:
 ```bash
-optruck MySecrets --k8s-secret my-secret --output kube-secret.yaml
+optruck MySecrets --k8s-secret my-secret --output kube-secret.yaml.1password
 ```
 
 4. Specify Kubernetes namespace:
@@ -96,9 +92,8 @@ optruck MySecrets --k8s-secret my-secret --k8s-namespace my-namespace
 - `--vault <value>`: 1Password Vault (e.g., "Development" or "abcd1234efgh5678")
 - `--account <value>`: 1Password account (e.g., "my.1password.com" or "my.1password.example.com")
 - `--overwrite`: Overwrite existing 1Password item and output file
-- `--interactive`: Enable interactive mode for selecting item, account, and vault
+- `-i, --interactive`: Enable interactive mode for selecting item, account, and vault
 - `--log-level <level>`: Set log level (debug|info|warn|error)
-- `--log-output <path>`: Set the log output (<file path>). If not specified, no logging is done.
 - `-h, --help`: Show help
 - `--version`: Show version
 
