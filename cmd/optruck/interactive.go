@@ -10,7 +10,6 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/yammerjp/optruck/internal/util/interactiverunner"
-	"github.com/yammerjp/optruck/pkg/kube"
 	"github.com/yammerjp/optruck/pkg/op"
 )
 
@@ -39,93 +38,37 @@ func (cli *CLI) setDataSourceInteractively() error {
 		// already set
 		return nil
 	}
-	_, result, err := cli.runner.Select(promptui.Select{
-		Label:     "Select data source: ",
-		Items:     []string{"env file", "k8s secret"},
-		Templates: interactiverunner.SelectTemplateBuilder("Data Source", "", ""),
-	})
+	ds, err := interactiverunner.NewDataSourceSelector(cli.runner).Select()
 	if err != nil {
 		return err
 	}
-	slog.Debug("selected data source", "result", result)
-	switch result {
-	case "env file":
+	switch ds {
+	case interactiverunner.DataSourceEnvFile:
 		slog.Debug("setting env file path")
-		if err := cli.setEnvFilePathInteractively(); err != nil {
-			return err
-		}
-	case "k8s secret":
-		slog.Debug("setting k8s secret")
-		if err := cli.setK8sSecretInteractively(); err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("invalid data source: %s", result)
-	}
-	return nil
-}
-
-func (cli *CLI) setEnvFilePathInteractively() error {
-	result, err := cli.runner.Input(promptui.Prompt{
-		Label:   "Enter env file path: ",
-		Default: defaultEnvFilePath,
-		Validate: func(input string) error {
-			if input == "" {
-				return fmt.Errorf("env file path is required")
-			}
-			stat, err := os.Stat(input)
-			if err != nil {
-				if os.IsNotExist(err) {
-					return nil
-				}
-				return err
-			}
-			if stat.IsDir() {
-				return fmt.Errorf("env file path is already created as a directory")
-			}
-			return nil
-		},
-		Templates: interactiverunner.PromptTemplateBuilder("Env File Path", ""),
-	})
-	if err != nil {
-		return err
-	}
-	cli.EnvFile = result
-	return nil
-}
-
-func (cli *CLI) setK8sSecretInteractively() error {
-	kubeClient := kube.NewClient()
-	namespaces, err := kubeClient.GetNamespaces()
-	if err != nil {
-		return err
-	}
-
-	if cli.K8sNamespace == "" {
-		_, result, err := cli.runner.Select(promptui.Select{
-			Label:     "Select Kubernetes Namespace: ",
-			Items:     namespaces,
-			Templates: interactiverunner.SelectTemplateBuilder("Kubernetes Namespace", "", ""),
-		})
+		envFilePath, err := interactiverunner.NewEnvFilePrompter(cli.runner).Prompt()
 		if err != nil {
 			return err
 		}
-		cli.K8sNamespace = result
+		cli.EnvFile = envFilePath
+	case interactiverunner.DataSourceK8sSecret:
+		slog.Debug("setting k8s secret")
+		if cli.K8sNamespace == "" {
+			namespace, err := interactiverunner.NewKubeNamespaceSelector(cli.runner).Select()
+			if err != nil {
+				return err
+			}
+			cli.K8sNamespace = namespace
+		}
+		if cli.K8sSecret == "" {
+			secret, err := interactiverunner.NewKubeSecretSelector(cli.runner, cli.K8sNamespace).Select()
+			if err != nil {
+				return err
+			}
+			cli.K8sSecret = secret
+		}
+	default:
+		return fmt.Errorf("invalid data source: %s", ds)
 	}
-
-	secrets, err := kubeClient.GetSecrets(cli.K8sNamespace)
-	if err != nil {
-		return err
-	}
-	_, result, err := cli.runner.Select(promptui.Select{
-		Label:     fmt.Sprintf("Select kubernetes secret on namespace %s", cli.K8sNamespace),
-		Items:     secrets,
-		Templates: interactiverunner.SelectTemplateBuilder("Kubernetes Secret", "", ""),
-	})
-	if err != nil {
-		return err
-	}
-	cli.K8sSecret = result
 	return nil
 }
 
