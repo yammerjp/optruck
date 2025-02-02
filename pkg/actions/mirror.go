@@ -9,7 +9,7 @@ import (
 )
 
 type MirrorConfig struct {
-	Logger       *slog.Logger
+	Logger       slog.Logger
 	OpItemClient op.ItemClient
 	DataSource   datasources.Source
 	Dest         output.Dest

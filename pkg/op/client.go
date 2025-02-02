@@ -1,14 +1,20 @@
 package op
 
-import execPackage "k8s.io/utils/exec"
+import (
+	"log/slog"
+
+	execPackage "k8s.io/utils/exec"
+)
 
 type ExecutableClient struct {
-	exec execPackage.Interface
+	exec   execPackage.Interface
+	logger *slog.Logger
 }
 
-func NewExecutableClient(exec execPackage.Interface) *ExecutableClient {
+func NewExecutableClient(exec execPackage.Interface, logger *slog.Logger) *ExecutableClient {
 	return &ExecutableClient{
-		exec: exec,
+		exec:   exec,
+		logger: logger,
 	}
 }
 
@@ -17,9 +23,9 @@ type AccountClient struct {
 	Account string
 }
 
-func NewAccountClient(account string, exec execPackage.Interface) *AccountClient {
+func NewAccountClient(account string, exec execPackage.Interface, logger *slog.Logger) *AccountClient {
 	return &AccountClient{
-		ExecutableClient: *NewExecutableClient(exec),
+		ExecutableClient: *NewExecutableClient(exec, logger),
 		Account:          account,
 	}
 }
@@ -29,9 +35,9 @@ type VaultClient struct {
 	Vault string
 }
 
-func NewVaultClient(account, vault string, exec execPackage.Interface) *VaultClient {
+func NewVaultClient(account, vault string, exec execPackage.Interface, logger *slog.Logger) *VaultClient {
 	return &VaultClient{
-		AccountClient: *NewAccountClient(account, exec),
+		AccountClient: *NewAccountClient(account, exec, logger),
 		Vault:         vault,
 	}
 }
@@ -41,9 +47,9 @@ type ItemClient struct {
 	ItemName string
 }
 
-func NewItemClient(account, vault, itemName string, exec execPackage.Interface) *ItemClient {
+func NewItemClient(account, vault, itemName string, exec execPackage.Interface, logger *slog.Logger) *ItemClient {
 	return &ItemClient{
-		VaultClient: *NewVaultClient(account, vault, exec),
+		VaultClient: *NewVaultClient(account, vault, exec, logger),
 		ItemName:    itemName,
 	}
 }

@@ -1,25 +1,10 @@
 package op
 
-import (
-	"bytes"
-	"encoding/json"
-)
-
 func (c *VaultClient) ListItems() ([]SecretReference, error) {
-	cmd := c.BuildCommand("item", "list")
-	stdoutBuffer := bytes.NewBuffer(nil)
-	stderrBuffer := bytes.NewBuffer(nil)
-	cmd.SetStdout(stdoutBuffer)
-	cmd.SetStderr(stderrBuffer)
-	if err := cmd.Run(); err != nil {
-		return nil, err
-	}
-
 	var resp []ItemResponse
-	if err := json.Unmarshal(stdoutBuffer.Bytes(), &resp); err != nil {
+	if err := c.BuildCommand("item", "list").RunWithJson(nil, &resp); err != nil {
 		return nil, err
 	}
-
 	refs := make([]SecretReference, len(resp))
 	for i, item := range resp {
 		refs[i] = *c.BuildSecretReference(item)

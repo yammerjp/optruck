@@ -37,7 +37,7 @@ func (cli *CLI) build() (actions.Action, error) {
 	}
 
 	return &actions.MirrorConfig{
-		Logger:       cli.buildLogger(),
+		Logger:       *cli.logger,
 		OpItemClient: *opItemClient,
 		DataSource:   ds,
 		Dest:         dest,
@@ -69,6 +69,10 @@ func (cli *CLI) buildLogger() *slog.Logger {
 	return slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel}))
 }
 
+func (cli *CLI) setLogger() {
+	cli.logger = cli.buildLogger()
+}
+
 func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 	if strict {
 		if cli.Account == "" {
@@ -82,7 +86,7 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 		}
 	}
 
-	return op.NewItemClient(cli.Account, cli.Vault, cli.Item, cli.exec), nil
+	return op.NewItemClient(cli.Account, cli.Vault, cli.Item, cli.exec, cli.logger), nil
 }
 
 func (cli *CLI) buildDataSource() (datasources.Source, error) {

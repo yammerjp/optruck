@@ -46,6 +46,7 @@ func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error
 }
 
 func (cli *CLI) Run() error {
+	cli.setLogger()
 	action, err := cli.buildOrBuildWithInteractive()
 	if err != nil {
 		return err

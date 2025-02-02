@@ -1,6 +1,8 @@
 package optruck
 
 import (
+	"log/slog"
+
 	execPackage "k8s.io/utils/exec"
 )
 
@@ -30,4 +32,5 @@ type CLI struct {
 
 	runner InteractiveRunner
 	exec   execPackage.Interface
+	logger *slog.Logger
 }

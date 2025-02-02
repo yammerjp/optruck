@@ -182,7 +182,7 @@ func (cli *CLI) setTargetAccountInteractively() error {
 		return nil
 	}
 
-	accounts, err := op.NewExecutableClient(cli.exec).ListAccounts()
+	accounts, err := op.NewExecutableClient(cli.exec, cli.logger).ListAccounts()
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (cli *CLI) setTargetVaultInteractively() error {
 		return fmt.Errorf("account must be set before selecting vault")
 	}
 
-	vaults, err := op.NewAccountClient(cli.Account, cli.exec).ListVaults()
+	vaults, err := op.NewAccountClient(cli.Account, cli.exec, cli.logger).ListVaults()
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func (cli *CLI) setTargetItemInteractively() error {
 		return fmt.Errorf("vault must be set before selecting item")
 	}
 
-	items, err := op.NewVaultClient(cli.Account, cli.Vault, cli.exec).ListItems()
+	items, err := op.NewVaultClient(cli.Account, cli.Vault, cli.exec, cli.logger).ListItems()
 	if err != nil {
 		return err
 	}

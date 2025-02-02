@@ -1,27 +1,23 @@
 package op
 
-import "k8s.io/utils/exec"
+import (
+	optruckexec "github.com/yammerjp/optruck/pkg/exec"
+)
 
-type CommandOptions struct {
-	AddAccount bool
-	AddVault   bool
-	Args       []string
-}
-
-func (c *ExecutableClient) BuildCommand(args ...string) exec.Cmd {
+func (c *ExecutableClient) BuildCommand(args ...string) *optruckexec.Command {
 	args = append(args, "--format", "json")
-	return c.exec.Command("op", args...)
+	return optruckexec.NewCommand(c.exec, c.logger, "op", args...)
 }
 
-func (c *AccountClient) BuildCommand(args ...string) exec.Cmd {
+func (c *AccountClient) BuildCommand(args ...string) *optruckexec.Command {
 	args = append(args, "--account", c.Account)
 	args = append(args, "--format", "json")
-	return c.exec.Command("op", args...)
+	return optruckexec.NewCommand(c.exec, c.logger, "op", args...)
 }
 
-func (c *VaultClient) BuildCommand(args ...string) exec.Cmd {
+func (c *VaultClient) BuildCommand(args ...string) *optruckexec.Command {
 	args = append(args, "--account", c.Account)
 	args = append(args, "--vault", c.Vault)
 	args = append(args, "--format", "json")
-	return c.exec.Command("op", args...)
+	return optruckexec.NewCommand(c.exec, c.logger, "op", args...)
 }

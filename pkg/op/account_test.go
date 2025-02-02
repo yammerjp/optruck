@@ -1,6 +1,8 @@
 package op
 
 import (
+	"log/slog"
+	"os"
 	"testing"
 
 	"k8s.io/utils/exec"
@@ -95,8 +97,9 @@ func TestListAccounts(t *testing.T) {
 					},
 				},
 			}
+			fakeLogger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-			client := NewExecutableClient(fakeExec)
+			client := NewExecutableClient(fakeExec, fakeLogger)
 
 			got, err := client.ListAccounts()
 			if (err != nil) != tt.wantErr {

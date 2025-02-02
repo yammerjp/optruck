@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"log/slog"
+
 	"github.com/manifoldco/promptui"
 	"k8s.io/utils/exec"
 )
@@ -286,7 +288,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 	}{
 		{
 			name: "select account",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{
 				selectResponses: []struct {
 					index int
@@ -306,7 +308,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 		},
 		{
 			name:      "account already set",
-			cli:       &CLI{Account: "existing.1password.com"},
+			cli:       &CLI{Account: "existing.1password.com", logger: slog.Default()},
 			mock:      &MockInteractiveRunner{},
 			mockExec:  NewMockExec(),
 			wantErr:   false,
@@ -314,7 +316,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 		},
 		{
 			name: "op account list fails",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
@@ -326,7 +328,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 		},
 		{
 			name: "no accounts available",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
@@ -370,7 +372,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 	}{
 		{
 			name: "select vault",
-			cli:  &CLI{Account: "my.1password.com"},
+			cli:  &CLI{Account: "my.1password.com", logger: slog.Default()},
 			mock: &MockInteractiveRunner{
 				selectResponses: []struct {
 					index int
@@ -390,7 +392,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		},
 		{
 			name:      "vault already set",
-			cli:       &CLI{Account: "my.1password.com", Vault: "existing-vault"},
+			cli:       &CLI{Account: "my.1password.com", Vault: "existing-vault", logger: slog.Default()},
 			mock:      &MockInteractiveRunner{},
 			mockExec:  NewMockExec(),
 			wantErr:   false,
@@ -398,7 +400,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		},
 		{
 			name:      "account not set",
-			cli:       &CLI{},
+			cli:       &CLI{logger: slog.Default()},
 			mock:      &MockInteractiveRunner{},
 			mockExec:  NewMockExec(),
 			wantErr:   true,
@@ -406,7 +408,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		},
 		{
 			name: "op vault list fails",
-			cli:  &CLI{Account: "my.1password.com"},
+			cli:  &CLI{Account: "my.1password.com", logger: slog.Default()},
 			mock: &MockInteractiveRunner{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
@@ -418,7 +420,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		},
 		{
 			name: "no vaults available",
-			cli:  &CLI{Account: "my.1password.com"},
+			cli:  &CLI{Account: "my.1password.com", logger: slog.Default()},
 			mock: &MockInteractiveRunner{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
@@ -465,6 +467,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 			cli: &CLI{
 				Account: "my.1password.com",
 				Vault:   "vault1",
+				logger:  slog.Default(),
 			},
 			mock: &MockInteractiveRunner{
 				selectResponses: []struct {
@@ -495,6 +498,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 				Account:   "my.1password.com",
 				Vault:     "vault1",
 				Overwrite: true,
+				logger:    slog.Default(),
 			},
 			mock: &MockInteractiveRunner{
 				selectResponses: []struct {
@@ -519,6 +523,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 				Account: "my.1password.com",
 				Vault:   "vault1",
 				Item:    "existing-item",
+				logger:  slog.Default(),
 			},
 			mock:      &MockInteractiveRunner{},
 			mockExec:  NewMockExec(),
@@ -527,7 +532,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 		},
 		{
 			name:      "account not set",
-			cli:       &CLI{},
+			cli:       &CLI{logger: slog.Default()},
 			mock:      &MockInteractiveRunner{},
 			mockExec:  NewMockExec(),
 			wantErr:   true,
@@ -535,7 +540,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 		},
 		{
 			name:      "vault not set",
-			cli:       &CLI{Account: "my.1password.com"},
+			cli:       &CLI{Account: "my.1password.com", logger: slog.Default()},
 			mock:      &MockInteractiveRunner{},
 			mockExec:  NewMockExec(),
 			wantErr:   true,
@@ -546,6 +551,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 			cli: &CLI{
 				Account: "my.1password.com",
 				Vault:   "vault1",
+				logger:  slog.Default(),
 			},
 			mock: &MockInteractiveRunner{},
 			mockExec: func() *MockExec {
@@ -562,6 +568,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 				Account:   "my.1password.com",
 				Vault:     "vault1",
 				Overwrite: true,
+				logger:    slog.Default(),
 			},
 			mock: &MockInteractiveRunner{},
 			mockExec: func() *MockExec {
@@ -653,7 +660,7 @@ func TestSetDestInteractively(t *testing.T) {
 	}{
 		{
 			name: "set output path",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{
 				inputResponses: []struct {
 					value string
@@ -667,7 +674,7 @@ func TestSetDestInteractively(t *testing.T) {
 		},
 		{
 			name: "set output path with confirmation",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{
 				inputResponses: []struct {
 					value string
@@ -688,14 +695,14 @@ func TestSetDestInteractively(t *testing.T) {
 		},
 		{
 			name:      "output already set",
-			cli:       &CLI{Output: "existing.env"},
+			cli:       &CLI{Output: "existing.env", logger: slog.Default()},
 			mock:      &MockInteractiveRunner{},
 			wantErr:   false,
 			wantValue: "existing.env",
 		},
 		{
 			name: "invalid output path",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{
 				inputResponses: []struct {
 					value string
@@ -709,7 +716,7 @@ func TestSetDestInteractively(t *testing.T) {
 		},
 		{
 			name: "empty output path",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{
 				inputResponses: []struct {
 					value string
@@ -723,7 +730,7 @@ func TestSetDestInteractively(t *testing.T) {
 		},
 		{
 			name: "cancel overwrite",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{
 				inputResponses: []struct {
 					value string
@@ -744,7 +751,7 @@ func TestSetDestInteractively(t *testing.T) {
 		},
 		{
 			name: "path is a directory",
-			cli:  &CLI{},
+			cli:  &CLI{logger: slog.Default()},
 			mock: &MockInteractiveRunner{
 				inputResponses: []struct {
 					value string

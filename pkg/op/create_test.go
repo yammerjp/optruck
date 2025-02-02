@@ -3,6 +3,8 @@ package op
 import (
 	"bytes"
 	"encoding/json"
+	"log/slog"
+	"os"
 	"testing"
 
 	"k8s.io/utils/exec"
@@ -146,7 +148,11 @@ func TestCreateItem(t *testing.T) {
 					func() ([]byte, []byte, error) {
 						// Check stdin
 						if tt.wantStdin != "" {
-							gotJSON := fcmd.Stdin.(*bytes.Buffer).Bytes()
+							buf := new(bytes.Buffer)
+							if _, err := buf.ReadFrom(fcmd.Stdin); err != nil {
+								t.Errorf("failed to read stdin: %v", err)
+							}
+							gotJSON := buf.Bytes()
 							var got, want interface{}
 							if err := json.Unmarshal(gotJSON, &got); err != nil {
 								t.Errorf("failed to unmarshal got JSON: %v", err)
@@ -196,8 +202,9 @@ func TestCreateItem(t *testing.T) {
 					},
 				},
 			}
+			fakeLogger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-			client := NewItemClient(tt.account, tt.vault, tt.itemName, fakeExec)
+			client := NewItemClient(tt.account, tt.vault, tt.itemName, fakeExec, fakeLogger)
 
 			got, err := client.CreateItem(tt.envPairs)
 			if err != tt.wantErr {
