@@ -91,7 +91,10 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 
 func (cli *CLI) buildDataSource() (datasources.Source, error) {
 	if cli.EnvFile != "" {
-		return &datasources.EnvFileSource{Path: cli.EnvFile}, nil
+		return &datasources.EnvFileSource{
+			Path:   cli.EnvFile,
+			Logger: cli.logger,
+		}, nil
 	}
 	if cli.K8sSecret != "" {
 		if cli.K8sNamespace == "" {
@@ -101,6 +104,7 @@ func (cli *CLI) buildDataSource() (datasources.Source, error) {
 			Namespace:  cli.K8sNamespace,
 			SecretName: cli.K8sSecret,
 			Client:     kube.NewClient(cli.exec),
+			Logger:     cli.logger,
 		}, nil
 	}
 	return nil, fmt.Errorf("either --env-file or --k8s-secret is required")

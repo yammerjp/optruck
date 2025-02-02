@@ -1,6 +1,7 @@
 package datasources
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,7 +17,7 @@ func TestEnvFileSource_FetchSecrets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	source := &EnvFileSource{Path: envPath}
+	source := &EnvFileSource{Path: envPath, Logger: slog.Default()}
 	secrets, err := source.FetchSecrets()
 
 	if err != nil {
@@ -33,7 +34,7 @@ func TestEnvFileSource_FetchSecrets(t *testing.T) {
 }
 
 func TestEnvFileSource_FetchSecrets_FileNotFound(t *testing.T) {
-	source := &EnvFileSource{Path: "nonexistent.env"}
+	source := &EnvFileSource{Path: "nonexistent.env", Logger: slog.Default()}
 	secrets, err := source.FetchSecrets()
 
 	if err == nil {

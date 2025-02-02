@@ -2,6 +2,7 @@ package datasources
 
 import (
 	"errors"
+	"log/slog"
 	"reflect"
 	"strings"
 	"testing"
@@ -192,6 +193,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 				Namespace:  tt.namespace,
 				SecretName: tt.secretName,
 				Client:     client,
+				Logger:     slog.Default(),
 			}
 
 			got, err := source.FetchSecrets()

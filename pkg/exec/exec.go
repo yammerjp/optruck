@@ -3,7 +3,6 @@ package exec
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 
 	"k8s.io/utils/exec"
@@ -26,35 +25,54 @@ func NewCommand(exec exec.Interface, logger *slog.Logger, bin string, args ...st
 }
 
 func (c *Command) Run(stdin []byte) (stdout string, err error) {
+	c.logger.Debug("Executing command", "command", c.bin, "args", c.args)
+
 	execCmd := c.exec.Command(c.bin, c.args...)
 	stdoutBytes := bytes.NewBuffer(nil)
 	stderrBytes := bytes.NewBuffer(nil)
 	if stdin != nil {
 		execCmd.SetStdin(bytes.NewReader(stdin))
+		c.logger.Debug("Command input", "stdin", string(stdin))
 	}
 	execCmd.SetStdout(stdoutBytes)
 	execCmd.SetStderr(stderrBytes)
-	c.logger.Info(fmt.Sprintf("exec command: %s, %v", c.bin, c.args))
-	c.logger.Debug(fmt.Sprintf("stdin: %v", string(stdin)))
+
 	err = execCmd.Run()
 	stderr := stderrBytes.String()
+	stdout = stdoutBytes.String()
+
 	if stderr != "" {
-		c.logger.Info(fmt.Sprintf("stderr: %s", stderr))
+		c.logger.Info("Command produced stderr output", "stderr", stderr)
 	}
 	if err != nil {
+		c.logger.Error("Command execution failed", "error", err, "stderr", stderr)
 		return "", err
 	}
-	return stdoutBytes.String(), nil
+
+	c.logger.Debug("Command executed successfully", "stdout_length", len(stdout))
+	return stdout, nil
 }
 
 func (c *Command) RunWithJson(stdin interface{}, result interface{}) (err error) {
+	c.logger.Debug("Executing JSON command", "command", c.bin, "args", c.args)
+
 	stdinBytes, err := json.Marshal(stdin)
 	if err != nil {
+		c.logger.Error("Failed to marshal JSON input", "error", err)
 		return err
 	}
+
 	stdout, err := c.Run(stdinBytes)
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal([]byte(stdout), &result)
+
+	err = json.Unmarshal([]byte(stdout), &result)
+	if err != nil {
+		c.logger.Error("Failed to unmarshal JSON output", "error", err, "stdout", stdout)
+		return err
+	}
+
+	c.logger.Debug("JSON command completed successfully")
+	return nil
 }
