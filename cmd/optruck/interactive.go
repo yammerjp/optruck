@@ -142,7 +142,7 @@ func (cli *CLI) setEnvFilePathInteractively() error {
 }
 
 func (cli *CLI) setK8sSecretInteractively() error {
-	kubeClient := kube.NewClient(cli.exec, cli.logger)
+	kubeClient := kube.NewClient(*cli.buildCommandConfig())
 	namespaces, err := kubeClient.GetNamespaces()
 	if err != nil {
 		return err
@@ -182,7 +182,7 @@ func (cli *CLI) setTargetAccountInteractively() error {
 		return nil
 	}
 
-	accounts, err := op.NewExecutableClient(cli.exec, cli.logger).ListAccounts()
+	accounts, err := op.NewExecutableClient(*cli.buildCommandConfig()).ListAccounts()
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (cli *CLI) setTargetVaultInteractively() error {
 		return fmt.Errorf("account must be set before selecting vault")
 	}
 
-	vaults, err := op.NewExecutableClient(cli.exec, cli.logger).BuildAccountClient(cli.Account).ListVaults()
+	vaults, err := op.NewExecutableClient(*cli.buildCommandConfig()).BuildAccountClient(cli.Account).ListVaults()
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func (cli *CLI) setTargetItemInteractively() error {
 		return fmt.Errorf("vault must be set before selecting item")
 	}
 
-	items, err := op.NewExecutableClient(cli.exec, cli.logger).BuildVaultClient(cli.Account, cli.Vault).ListItems()
+	items, err := op.NewExecutableClient(*cli.buildCommandConfig()).BuildVaultClient(cli.Account, cli.Vault).ListItems()
 	if err != nil {
 		return err
 	}

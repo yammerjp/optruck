@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	optruckexec "github.com/yammerjp/optruck/pkg/exec"
 	"github.com/yammerjp/optruck/pkg/kube"
 	"k8s.io/utils/exec"
 	testingexec "k8s.io/utils/exec/testing"
@@ -188,7 +189,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 			}
 			fakeExec.CommandScript = []testingexec.FakeCommandAction{cmdAction}
 
-			client := kube.NewClient(fakeExec, slog.Default())
+			client := kube.NewClient(optruckexec.NewCommandConfig(fakeExec, slog.Default()))
 			source := &K8sSecretSource{
 				Namespace:  tt.namespace,
 				SecretName: tt.secretName,

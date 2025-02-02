@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	optruckexec "github.com/yammerjp/optruck/pkg/exec"
 	"k8s.io/utils/exec"
 	testingexec "k8s.io/utils/exec/testing"
 )
@@ -106,7 +107,7 @@ func TestGetSecret(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec, slog.Default())
+			client := NewClient(optruckexec.NewCommandConfig(fakeExec, slog.Default()))
 			data, err := client.GetSecret(tt.namespace, tt.secretName)
 
 			if tt.expectedErr && err == nil {
@@ -195,7 +196,7 @@ func TestGetNamespaces(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec, slog.Default())
+			client := NewClient(optruckexec.NewCommandConfig(fakeExec, slog.Default()))
 			names, err := client.GetNamespaces()
 
 			if tt.expectedErr && err == nil {
@@ -297,7 +298,7 @@ func TestGetSecrets(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec, slog.Default())
+			client := NewClient(optruckexec.NewCommandConfig(fakeExec, slog.Default()))
 			names, err := client.GetSecrets(tt.namespace)
 
 			if tt.expectedErr && err == nil {

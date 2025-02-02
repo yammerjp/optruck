@@ -1,23 +1,14 @@
 package op
 
 import (
-	"log/slog"
-
 	optruckexec "github.com/yammerjp/optruck/pkg/exec"
-	"k8s.io/utils/exec"
 )
 
 type ExecutableClient struct {
 	optruckexec.CommandConfig
 }
 
-func NewExecutableClient(exec exec.Interface, logger *slog.Logger) *ExecutableClient {
-	return &ExecutableClient{
-		CommandConfig: optruckexec.NewCommandConfig(exec, logger),
-	}
-}
-
-func NewExecutableClientFromConfig(exec optruckexec.CommandConfig) *ExecutableClient {
+func NewExecutableClient(exec optruckexec.CommandConfig) *ExecutableClient {
 	return &ExecutableClient{
 		CommandConfig: exec,
 	}

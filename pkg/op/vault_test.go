@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	optruckexec "github.com/yammerjp/optruck/pkg/exec"
 	"k8s.io/utils/exec"
 	testingexec "k8s.io/utils/exec/testing"
 )
@@ -99,7 +100,7 @@ func TestListVaults(t *testing.T) {
 			}
 			fakeLogger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-			client := NewExecutableClient(fakeExec, fakeLogger).BuildAccountClient(tt.account)
+			client := NewExecutableClient(optruckexec.NewCommandConfig(fakeExec, fakeLogger)).BuildAccountClient(tt.account)
 
 			got, err := client.ListVaults()
 			if (err != nil) != tt.wantErr {

@@ -2,6 +2,7 @@ package optruck
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	execPackage "k8s.io/utils/exec"
@@ -9,9 +10,13 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/manifoldco/promptui"
 	"github.com/yammerjp/optruck/pkg/actions"
+	optruckexec "github.com/yammerjp/optruck/pkg/exec"
 )
 
 func Run() {
+	exec := execPackage.New()
+	runner := InteractiveRunnerImpl{}
+
 	cli := CLI{}
 	ctx := kong.Parse(&cli,
 		kong.Name("optruck"),
@@ -19,13 +24,12 @@ func Run() {
 		kong.UsageOnError(),
 		kong.Help(helpPrinter),
 	)
-	if err := cli.Run(); err != nil {
+	if err := cli.Run(exec, &runner); err != nil {
 		ctx.Fatalf("%v", err)
 	}
 }
 
 func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error) {
-	cli.exec = execPackage.New()
 	if cli.Interactive {
 		cli.runner = &InteractiveRunnerImpl{}
 		if err = cli.SetOptionsInteractively(); err != nil {
@@ -42,11 +46,21 @@ func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error
 			}
 		}()
 	}
-	return cli.buildWithDefault()
+	return cli.build()
 }
 
-func (cli *CLI) Run() error {
-	cli.setLogger()
+var logger *slog.Logger
+var commandConfig *optruckexec.CommandConfig
+
+func (cli *CLI) Run(exec execPackage.Interface, runner InteractiveRunner) error {
+	logger = cli.buildLogger()
+	commandConfig = cli.buildCommandConfig()
+
+	// deprecated
+	cli.exec = exec
+	cli.logger = logger
+	cli.runner = runner
+
 	action, err := cli.buildOrBuildWithInteractive()
 	if err != nil {
 		return err

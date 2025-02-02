@@ -156,6 +156,7 @@ func (c *MockCmd) Stop() {
 }
 
 func TestSetDataSourceInteractively(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	tests := []struct {
 		name     string
 		cli      *CLI
@@ -167,7 +168,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 	}{
 		{
 			name: "select env file",
-			cli:  &CLI{},
+			cli:  &CLI{logger: logger},
 			mock: &MockInteractiveRunner{
 				selectResponses: []struct {
 					index int
@@ -190,7 +191,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		},
 		{
 			name: "select k8s secret",
-			cli:  &CLI{},
+			cli:  &CLI{logger: logger},
 			mock: &MockInteractiveRunner{
 				selectResponses: []struct {
 					index int
@@ -214,7 +215,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		},
 		{
 			name:     "data source already set with env file",
-			cli:      &CLI{EnvFile: "existing.env"},
+			cli:      &CLI{EnvFile: "existing.env", logger: logger},
 			mock:     &MockInteractiveRunner{},
 			mockExec: NewMockExec(),
 			wantErr:  false,
@@ -223,7 +224,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		},
 		{
 			name:     "data source already set with k8s secret",
-			cli:      &CLI{K8sSecret: "existing-secret"},
+			cli:      &CLI{K8sSecret: "existing-secret", logger: logger},
 			mock:     &MockInteractiveRunner{},
 			mockExec: NewMockExec(),
 			wantErr:  false,
@@ -232,7 +233,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		},
 		{
 			name: "kubectl get namespaces fails",
-			cli:  &CLI{},
+			cli:  &CLI{logger: logger},
 			mock: &MockInteractiveRunner{
 				selectResponses: []struct {
 					index int
