@@ -8,10 +8,10 @@ import (
 )
 
 type KubeNamespaceSelector struct {
-	runner Runner
+	runner Runnable
 }
 
-func NewKubeNamespaceSelector(runner Runner) *KubeNamespaceSelector {
+func NewKubeNamespaceSelector(runner Runnable) *KubeNamespaceSelector {
 	return &KubeNamespaceSelector{runner: runner}
 }
 
@@ -34,11 +34,11 @@ func (k *KubeNamespaceSelector) Select() (string, error) {
 }
 
 type KubeSecretSelector struct {
-	runner    Runner
+	runner    Runnable
 	namespace string
 }
 
-func NewKubeSecretSelector(runner Runner, namespace string) *KubeSecretSelector {
+func NewKubeSecretSelector(runner Runnable, namespace string) *KubeSecretSelector {
 	return &KubeSecretSelector{runner: runner, namespace: namespace}
 }
 

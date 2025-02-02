@@ -13,7 +13,7 @@ import (
 	"k8s.io/utils/exec"
 )
 
-type MockRunner struct {
+type MockRunnable struct {
 	selectResponses []struct {
 		index int
 		value string
@@ -27,7 +27,7 @@ type MockRunner struct {
 	inputIndex  int
 }
 
-func (m *MockRunner) Select(_ promptui.Select) (int, string, error) {
+func (m *MockRunnable) Select(_ promptui.Select) (int, string, error) {
 	if m.selectIndex >= len(m.selectResponses) {
 		return 0, "", nil
 	}
@@ -36,7 +36,7 @@ func (m *MockRunner) Select(_ promptui.Select) (int, string, error) {
 	return resp.index, resp.value, resp.err
 }
 
-func (m *MockRunner) Input(_ promptui.Prompt) (string, error) {
+func (m *MockRunnable) Input(_ promptui.Prompt) (string, error) {
 	if m.inputIndex >= len(m.inputResponses) {
 		return "", nil
 	}
@@ -158,7 +158,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 	tests := []struct {
 		name     string
 		cli      *CLI
-		mock     *MockRunner
+		mock     *MockRunnable
 		mockExec *MockExec
 		wantErr  bool
 		wantFile string
@@ -167,7 +167,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		{
 			name: "select env file",
 			cli:  &CLI{},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				selectResponses: []struct {
 					index int
 					value string
@@ -190,7 +190,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		{
 			name: "select k8s secret",
 			cli:  &CLI{},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				selectResponses: []struct {
 					index int
 					value string
@@ -214,7 +214,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		{
 			name:     "data source already set with env file",
 			cli:      &CLI{EnvFile: "existing.env"},
-			mock:     &MockRunner{},
+			mock:     &MockRunnable{},
 			mockExec: NewMockExec(),
 			wantErr:  false,
 			wantFile: "existing.env",
@@ -223,7 +223,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		{
 			name:     "data source already set with k8s secret",
 			cli:      &CLI{K8sSecret: "existing-secret"},
-			mock:     &MockRunner{},
+			mock:     &MockRunnable{},
 			mockExec: NewMockExec(),
 			wantErr:  false,
 			wantFile: "",
@@ -232,7 +232,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 		{
 			name: "kubectl get namespaces fails",
 			cli:  &CLI{},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				selectResponses: []struct {
 					index int
 					value string
@@ -280,7 +280,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 	tests := []struct {
 		name      string
 		cli       *CLI
-		mock      *MockRunner
+		mock      *MockRunnable
 		mockExec  *MockExec
 		wantErr   bool
 		wantValue string
@@ -288,7 +288,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 		{
 			name: "select account",
 			cli:  &CLI{},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				selectResponses: []struct {
 					index int
 					value string
@@ -308,7 +308,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 		{
 			name:      "account already set",
 			cli:       &CLI{Account: "existing.1password.com"},
-			mock:      &MockRunner{},
+			mock:      &MockRunnable{},
 			mockExec:  NewMockExec(),
 			wantErr:   false,
 			wantValue: "existing.1password.com",
@@ -316,7 +316,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 		{
 			name: "op account list fails",
 			cli:  &CLI{},
-			mock: &MockRunner{},
+			mock: &MockRunnable{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
 				m.outputs["op account list --format json"] = ""
@@ -328,7 +328,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 		{
 			name: "no accounts available",
 			cli:  &CLI{},
-			mock: &MockRunner{},
+			mock: &MockRunnable{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
 				m.outputs["op account list --format json"] = "[]"
@@ -364,7 +364,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 	tests := []struct {
 		name      string
 		cli       *CLI
-		mock      *MockRunner
+		mock      *MockRunnable
 		mockExec  *MockExec
 		wantErr   bool
 		wantValue string
@@ -372,7 +372,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		{
 			name: "select vault",
 			cli:  &CLI{Account: "my.1password.com"},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				selectResponses: []struct {
 					index int
 					value string
@@ -392,7 +392,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		{
 			name:      "vault already set",
 			cli:       &CLI{Account: "my.1password.com", Vault: "existing-vault"},
-			mock:      &MockRunner{},
+			mock:      &MockRunnable{},
 			mockExec:  NewMockExec(),
 			wantErr:   false,
 			wantValue: "existing-vault",
@@ -400,7 +400,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		{
 			name:      "account not set",
 			cli:       &CLI{},
-			mock:      &MockRunner{},
+			mock:      &MockRunnable{},
 			mockExec:  NewMockExec(),
 			wantErr:   true,
 			wantValue: "",
@@ -408,7 +408,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		{
 			name: "op vault list fails",
 			cli:  &CLI{Account: "my.1password.com"},
-			mock: &MockRunner{},
+			mock: &MockRunnable{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
 				m.outputs["op vault list --account my.1password.com --format json"] = ""
@@ -420,7 +420,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		{
 			name: "no vaults available",
 			cli:  &CLI{Account: "my.1password.com"},
-			mock: &MockRunner{},
+			mock: &MockRunnable{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
 				m.outputs["op vault list --account my.1password.com --format json"] = "[]"
@@ -456,7 +456,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 	tests := []struct {
 		name      string
 		cli       *CLI
-		mock      *MockRunner
+		mock      *MockRunnable
 		mockExec  *MockExec
 		wantErr   bool
 		wantValue string
@@ -467,7 +467,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 				Account: "my.1password.com",
 				Vault:   "vault1",
 			},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				selectResponses: []struct {
 					index int
 					value string
@@ -497,7 +497,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 				Vault:     "vault1",
 				Overwrite: true,
 			},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				selectResponses: []struct {
 					index int
 					value string
@@ -521,7 +521,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 				Vault:   "vault1",
 				Item:    "existing-item",
 			},
-			mock:      &MockRunner{},
+			mock:      &MockRunnable{},
 			mockExec:  NewMockExec(),
 			wantErr:   false,
 			wantValue: "existing-item",
@@ -529,7 +529,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 		{
 			name:      "account not set",
 			cli:       &CLI{},
-			mock:      &MockRunner{},
+			mock:      &MockRunnable{},
 			mockExec:  NewMockExec(),
 			wantErr:   true,
 			wantValue: "",
@@ -537,7 +537,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 		{
 			name:      "vault not set",
 			cli:       &CLI{Account: "my.1password.com"},
-			mock:      &MockRunner{},
+			mock:      &MockRunnable{},
 			mockExec:  NewMockExec(),
 			wantErr:   true,
 			wantValue: "",
@@ -548,7 +548,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 				Account: "my.1password.com",
 				Vault:   "vault1",
 			},
-			mock: &MockRunner{},
+			mock: &MockRunnable{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
 				m.outputs["op item list --account my.1password.com --vault vault1 --format json"] = ""
@@ -564,7 +564,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 				Vault:     "vault1",
 				Overwrite: true,
 			},
-			mock: &MockRunner{},
+			mock: &MockRunnable{},
 			mockExec: func() *MockExec {
 				m := NewMockExec()
 				m.outputs["op item list --account my.1password.com --vault vault1 --format json"] = "[]"
@@ -600,14 +600,14 @@ func TestSetDestInteractively(t *testing.T) {
 	tests := []struct {
 		name      string
 		cli       *CLI
-		mock      *MockRunner
+		mock      *MockRunnable
 		wantErr   bool
 		wantValue string
 	}{
 		{
 			name: "set output path",
 			cli:  &CLI{},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				inputResponses: []struct {
 					value string
 					err   error
@@ -621,7 +621,7 @@ func TestSetDestInteractively(t *testing.T) {
 		{
 			name: "set output path with confirmation",
 			cli:  &CLI{},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				inputResponses: []struct {
 					value string
 					err   error
@@ -642,14 +642,14 @@ func TestSetDestInteractively(t *testing.T) {
 		{
 			name:      "output already set",
 			cli:       &CLI{Output: "existing.env"},
-			mock:      &MockRunner{},
+			mock:      &MockRunnable{},
 			wantErr:   false,
 			wantValue: "existing.env",
 		},
 		{
 			name: "invalid output path",
 			cli:  &CLI{},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				inputResponses: []struct {
 					value string
 					err   error
@@ -663,7 +663,7 @@ func TestSetDestInteractively(t *testing.T) {
 		{
 			name: "empty output path",
 			cli:  &CLI{},
-			mock: &MockRunner{
+			mock: &MockRunnable{
 				inputResponses: []struct {
 					value string
 					err   error

@@ -4,17 +4,17 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-type Runner interface {
+type Runnable interface {
 	Select(promptui.Select) (int, string, error)
 	Input(promptui.Prompt) (string, error)
 }
 
-type RunnerImpl struct{}
+type RunnableImpl struct{}
 
-func (r *RunnerImpl) Select(prompt promptui.Select) (int, string, error) {
+func (r *RunnableImpl) Select(prompt promptui.Select) (int, string, error) {
 	return prompt.Run()
 }
 
-func (r *RunnerImpl) Input(prompt promptui.Prompt) (string, error) {
+func (r *RunnableImpl) Input(prompt promptui.Prompt) (string, error) {
 	return prompt.Run()
 }
