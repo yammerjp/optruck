@@ -37,7 +37,7 @@ func (cli *CLI) Run() error {
 		if err != nil {
 			return err
 		}
-		err = cli.confirmToProceed(cmds)
+		err = cli.runner.Confirm(cmds)
 		if err != nil {
 			return err
 		}

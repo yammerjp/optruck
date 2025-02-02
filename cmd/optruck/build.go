@@ -85,7 +85,7 @@ func (cli *CLI) buildDataSource() (datasources.Source, error) {
 
 func (cli *CLI) buildDest() (output.Dest, error) {
 	if cli.Output == "" {
-		cli.Output = defaultOutputPath(cli.K8sSecret)
+		cli.Output = interactive.DefaultOutputPath(cli.K8sSecret)
 	}
 	if cli.K8sSecret != "" {
 		return &output.K8sSecretTemplateDest{
@@ -98,11 +98,4 @@ func (cli *CLI) buildDest() (output.Dest, error) {
 	return &output.EnvTemplateDest{
 		Path: cli.Output,
 	}, nil
-}
-
-func defaultOutputPath(k8sSecret string) string {
-	if k8sSecret != "" {
-		return fmt.Sprintf("%s-secret.yaml.1password", k8sSecret)
-	}
-	return ".env.1password"
 }

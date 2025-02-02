@@ -301,16 +301,23 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 			mockExec: func() *MockExec {
 				m := NewMockExec()
 				m.outputs["op account list --format json"] = `[{"url": "my.1password.com", "email": "test@example.com"}]`
+				m.outputs["op vault list --account my.1password.com --format json"] = `[{"id": "vault1", "name": "Vault 1"}]`
+				m.outputs["op item list --account my.1password.com --vault vault1 --format json"] = `[{"id": "item1", "title": "Item 1"}]`
 				return m
 			}(),
 			wantErr:   false,
 			wantValue: "my.1password.com",
 		},
 		{
-			name:      "account already set",
-			cli:       &CLI{Account: "existing.1password.com"},
-			mock:      &MockRunnable{},
-			mockExec:  NewMockExec(),
+			name: "account already set",
+			cli:  &CLI{Account: "existing.1password.com"},
+			mock: &MockRunnable{},
+			mockExec: func() *MockExec {
+				m := NewMockExec()
+				m.outputs["op vault list --account existing.1password.com --format json"] = `[{"id": "vault1", "name": "Vault 1"}]`
+				m.outputs["op item list --account existing.1password.com --vault vault1 --format json"] = `[{"id": "item1", "title": "Item 1"}]`
+				return m
+			}(),
 			wantErr:   false,
 			wantValue: "existing.1password.com",
 		},
@@ -344,7 +351,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
-			err := tt.cli.setTargetAccountInteractively()
+			err := tt.cli.setTargetInteractively()
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
@@ -385,16 +392,21 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 			mockExec: func() *MockExec {
 				m := NewMockExec()
 				m.outputs["op vault list --account my.1password.com --format json"] = `[{"id": "vault1", "name": "Vault 1"}]`
+				m.outputs["op item list --account my.1password.com --vault vault1 --format json"] = `[{"id": "item1", "title": "Item 1"}]`
 				return m
 			}(),
 			wantErr:   false,
 			wantValue: "vault1",
 		},
 		{
-			name:      "vault already set",
-			cli:       &CLI{Account: "my.1password.com", Vault: "existing-vault"},
-			mock:      &MockRunnable{},
-			mockExec:  NewMockExec(),
+			name: "vault already set",
+			cli:  &CLI{Account: "my.1password.com", Vault: "existing-vault"},
+			mock: &MockRunnable{},
+			mockExec: func() *MockExec {
+				m := NewMockExec()
+				m.outputs["op item list --account my.1password.com --vault existing-vault --format json"] = `[{"id": "item1", "title": "Item 1"}]`
+				return m
+			}(),
 			wantErr:   false,
 			wantValue: "existing-vault",
 		},
@@ -436,7 +448,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
-			err := tt.cli.setTargetVaultInteractively()
+			err := tt.cli.setTargetInteractively()
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
@@ -463,19 +475,12 @@ func TestSetTargetItemInteractively(t *testing.T) {
 		wantValue string
 	}{
 		{
-			name: "create new item",
+			name: "create new item without overwrite",
 			cli: &CLI{
 				Account: "my.1password.com",
 				Vault:   "vault1",
 			},
 			mock: &MockRunnable{
-				selectResponses: []struct {
-					index int
-					value string
-					err   error
-				}{
-					{1, "create new", nil},
-				},
 				inputResponses: []struct {
 					value string
 					err   error
@@ -492,7 +497,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 			wantValue: "new-item",
 		},
 		{
-			name: "select existing item",
+			name: "with overwrite flag",
 			cli: &CLI{
 				Account:   "my.1password.com",
 				Vault:     "vault1",
@@ -504,16 +509,12 @@ func TestSetTargetItemInteractively(t *testing.T) {
 					value string
 					err   error
 				}{
-					{0, "item1", nil},
+					{0, "yes", nil},
 				},
 			},
-			mockExec: func() *MockExec {
-				m := NewMockExec()
-				m.outputs["op item list --account my.1password.com --vault vault1 --format json"] = `[{"id": "item1", "title": "Item 1"}]`
-				return m
-			}(),
+			mockExec:  NewMockExec(),
 			wantErr:   false,
-			wantValue: "item1",
+			wantValue: "",
 		},
 		{
 			name: "item already set",
@@ -543,44 +544,13 @@ func TestSetTargetItemInteractively(t *testing.T) {
 			wantErr:   true,
 			wantValue: "",
 		},
-		{
-			name: "op item list fails",
-			cli: &CLI{
-				Account: "my.1password.com",
-				Vault:   "vault1",
-			},
-			mock: &MockRunnable{},
-			mockExec: func() *MockExec {
-				m := NewMockExec()
-				m.outputs["op item list --account my.1password.com --vault vault1 --format json"] = ""
-				return m
-			}(),
-			wantErr:   true,
-			wantValue: "",
-		},
-		{
-			name: "no items available with overwrite",
-			cli: &CLI{
-				Account:   "my.1password.com",
-				Vault:     "vault1",
-				Overwrite: true,
-			},
-			mock: &MockRunnable{},
-			mockExec: func() *MockExec {
-				m := NewMockExec()
-				m.outputs["op item list --account my.1password.com --vault vault1 --format json"] = "[]"
-				return m
-			}(),
-			wantErr:   true,
-			wantValue: "",
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.cli.runner = interactive.NewRunner(tt.mock)
 			utilExec.SetExec(tt.mockExec)
-			err := tt.cli.setTargetItemInteractively()
+			err := tt.cli.setTargetInteractively()
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
