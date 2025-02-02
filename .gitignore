@@ -1,2 +1,4 @@
 .env
 /optruck
+# Added by goreleaser init:
+dist/
