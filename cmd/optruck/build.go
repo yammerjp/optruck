@@ -10,12 +10,9 @@ import (
 	"github.com/yammerjp/optruck/pkg/output"
 )
 
-func (cli *CLI) buildWithDefault() (actions.Action, error) {
-	if err := cli.SetDefaultIfEmpty(); err != nil {
-		return nil, err
-	}
-	return cli.build()
-}
+const (
+	defaultEnvFilePath = ".env"
+)
 
 func (cli *CLI) build() (actions.Action, error) {
 	ds, err := cli.buildDataSource()
@@ -44,10 +41,24 @@ func (cli *CLI) build() (actions.Action, error) {
 func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 	if strict {
 		if cli.Account == "" {
-			return nil, fmt.Errorf("--account is required")
+			accounts, err := op.NewExecutableClient().ListAccounts()
+			if err != nil {
+				return nil, fmt.Errorf("failed to list accounts: %w", err)
+			}
+			if len(accounts) != 1 {
+				return nil, fmt.Errorf("multiple accounts found, please specify the account with --account option")
+			}
+			cli.Account = accounts[0].URL
 		}
 		if cli.Vault == "" {
-			return nil, fmt.Errorf("--vault is required")
+			vaults, err := op.NewAccountClient(cli.Account).ListVaults()
+			if err != nil {
+				return nil, fmt.Errorf("failed to list vaults: %w", err)
+			}
+			if len(vaults) != 1 {
+				return nil, fmt.Errorf("multiple vaults found, please specify the vault with --vault option")
+			}
+			cli.Vault = vaults[0].Name
 		}
 		if cli.Item == "" {
 			return nil, fmt.Errorf("item specification is required")
@@ -58,12 +69,10 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 }
 
 func (cli *CLI) buildDataSource() (datasources.Source, error) {
-	if cli.EnvFile != "" {
-		return &datasources.EnvFileSource{Path: cli.EnvFile}, nil
-	}
 	if cli.K8sSecret != "" {
 		if cli.K8sNamespace == "" {
-			return nil, fmt.Errorf("--k8s-namespace is required when using --k8s-secret")
+			// default namespace
+			cli.K8sNamespace = "default"
 		}
 		return &datasources.K8sSecretSource{
 			Namespace:  cli.K8sNamespace,
@@ -71,10 +80,16 @@ func (cli *CLI) buildDataSource() (datasources.Source, error) {
 			Client:     kube.NewClient(),
 		}, nil
 	}
-	return nil, fmt.Errorf("either --env-file or --k8s-secret is required")
+	if cli.EnvFile == "" {
+		cli.EnvFile = defaultEnvFilePath
+	}
+	return &datasources.EnvFileSource{Path: cli.EnvFile}, nil
 }
 
 func (cli *CLI) buildDest() (output.Dest, error) {
+	if cli.Output == "" {
+		cli.Output = defaultOutputPath(cli.K8sSecret)
+	}
 	if cli.K8sSecret != "" {
 		return &output.K8sSecretTemplateDest{
 			Path:       cli.Output,
@@ -86,4 +101,11 @@ func (cli *CLI) buildDest() (output.Dest, error) {
 	return &output.EnvTemplateDest{
 		Path: cli.Output,
 	}, nil
+}
+
+func defaultOutputPath(k8sSecret string) string {
+	if k8sSecret != "" {
+		return fmt.Sprintf("%s-secret.yaml.1password", k8sSecret)
+	}
+	return ".env.1password"
 }

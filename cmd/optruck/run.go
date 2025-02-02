@@ -41,7 +41,7 @@ func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error
 			}
 		}()
 	}
-	return cli.buildWithDefault()
+	return cli.build()
 }
 
 func (cli *CLI) Run() error {
