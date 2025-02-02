@@ -1,5 +1,7 @@
 package optruck
 
+import "github.com/yammerjp/optruck/internal/util/interactiverunner"
+
 type InteractiveFlag bool
 
 type CLI struct {
@@ -24,5 +26,5 @@ type CLI struct {
 	LogLevel    string          `name:"log-level" help:"Set the log level (debug|info|warn|error|none)." enum:"debug,info,warn,error,none" default:"none"`
 	Interactive InteractiveFlag `name:"interactive" help:"Enable interactive mode for selecting the item, account, and vault." short:"i"`
 
-	runner InteractiveRunner
+	runner interactiverunner.InteractiveRunner
 }

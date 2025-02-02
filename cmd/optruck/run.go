@@ -1,13 +1,10 @@
 package optruck
 
 import (
-	"fmt"
-	"strings"
-
+	"github.com/yammerjp/optruck/internal/util/interactiverunner"
 	utilLogger "github.com/yammerjp/optruck/internal/util/logger"
 
 	"github.com/alecthomas/kong"
-	"github.com/manifoldco/promptui"
 )
 
 func Run() {
@@ -27,7 +24,7 @@ func (cli *CLI) Run() error {
 	utilLogger.SetDefaultLogger(cli.LogLevel)
 
 	if cli.Interactive {
-		cli.runner = &InteractiveRunnerImpl{}
+		cli.runner = &interactiverunner.InteractiveRunnerImpl{}
 		if err := cli.SetOptionsInteractively(); err != nil {
 			return err
 		}
@@ -52,33 +49,6 @@ func (cli *CLI) Run() error {
 		return err
 	}
 	return action.Run()
-}
-
-func (cli *CLI) confirmToProceed(cmds []string) error {
-	fmt.Println("The selected options are same as below.")
-	fmt.Print("    $ optruck")
-	for _, cmd := range cmds {
-		if strings.HasPrefix(cmd, "--") {
-			// break line
-			fmt.Printf(" \\\n      %s", cmd)
-		} else {
-			fmt.Printf(" %s", cmd)
-		}
-	}
-	fmt.Println()
-
-	i, _, err := cli.runner.Select(promptui.Select{
-		Label:     "Do you want to proceed? (yes/no)",
-		Items:     []string{"yes", "no"},
-		Templates: selectTemplateBuilder("Do you want to proceed?", "", ""),
-	})
-	if err != nil {
-		return err
-	}
-	if i != 0 {
-		return fmt.Errorf("aborted")
-	}
-	return nil
 }
 
 func (cli *CLI) buildResultCommand() ([]string, error) {

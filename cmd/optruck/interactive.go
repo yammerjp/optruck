@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/manifoldco/promptui"
+	"github.com/yammerjp/optruck/internal/util/interactiverunner"
 	"github.com/yammerjp/optruck/pkg/kube"
 	"github.com/yammerjp/optruck/pkg/op"
 )
@@ -32,54 +33,6 @@ func (cli *CLI) SetOptionsInteractively() error {
 	return nil
 }
 
-func selectTemplateBuilder(selectedPrefix string, mainField string, subField string) *promptui.SelectTemplates {
-	active := fmt.Sprintf("▸ {{ .%s | cyan | underline }}", mainField)
-	if subField != "" {
-		active += fmt.Sprintf(` {{"("|faint}}{{ .%s | red | underline }}{{")"|faint}}`, subField)
-	}
-
-	inactive := fmt.Sprintf("  {{ .%s | cyan }}", mainField)
-	if subField != "" {
-		inactive += fmt.Sprintf(` {{"("|faint}}{{ .%s | red }}{{")"|faint}}`, subField)
-	}
-
-	selected := fmt.Sprintf(`{{ "✔" | green }} %-20s: {{ .%s }}`, selectedPrefix, mainField)
-	if subField != "" {
-		selected += fmt.Sprintf(` {{"("|faint}}{{ .%s }}{{")"|faint}}`, subField)
-	}
-
-	return &promptui.SelectTemplates{
-		Label:    `{{ . | yellow }}`,
-		Active:   active,
-		Inactive: inactive,
-		Selected: selected,
-	}
-}
-
-func promptTemplateBuilder(successPrefix string, mainField string) *promptui.PromptTemplates {
-	return &promptui.PromptTemplates{
-		Prompt:  `{{ . | yellow }}`,
-		Valid:   fmt.Sprintf(`{{ "✔" | green }} {{ .%s | yellow }}`, mainField),
-		Invalid: fmt.Sprintf(`{{ "✘" | red }} {{ .%s | yellow }}`, mainField),
-		Success: fmt.Sprintf(`{{ "✔" | green }} %-20s: `, successPrefix),
-	}
-}
-
-type InteractiveRunner interface {
-	Select(promptui.Select) (int, string, error)
-	Input(promptui.Prompt) (string, error)
-}
-
-type InteractiveRunnerImpl struct{}
-
-func (r *InteractiveRunnerImpl) Select(prompt promptui.Select) (int, string, error) {
-	return prompt.Run()
-}
-
-func (r *InteractiveRunnerImpl) Input(prompt promptui.Prompt) (string, error) {
-	return prompt.Run()
-}
-
 func (cli *CLI) setDataSourceInteractively() error {
 	if cli.EnvFile != "" || cli.K8sSecret != "" {
 		slog.Debug("data source already set", "envFile", cli.EnvFile, "k8sSecret", cli.K8sSecret)
@@ -89,7 +42,7 @@ func (cli *CLI) setDataSourceInteractively() error {
 	_, result, err := cli.runner.Select(promptui.Select{
 		Label:     "Select data source: ",
 		Items:     []string{"env file", "k8s secret"},
-		Templates: selectTemplateBuilder("Data Source", "", ""),
+		Templates: interactiverunner.SelectTemplateBuilder("Data Source", "", ""),
 	})
 	if err != nil {
 		return err
@@ -132,7 +85,7 @@ func (cli *CLI) setEnvFilePathInteractively() error {
 			}
 			return nil
 		},
-		Templates: promptTemplateBuilder("Env File Path", ""),
+		Templates: interactiverunner.PromptTemplateBuilder("Env File Path", ""),
 	})
 	if err != nil {
 		return err
@@ -152,7 +105,7 @@ func (cli *CLI) setK8sSecretInteractively() error {
 		_, result, err := cli.runner.Select(promptui.Select{
 			Label:     "Select Kubernetes Namespace: ",
 			Items:     namespaces,
-			Templates: selectTemplateBuilder("Kubernetes Namespace", "", ""),
+			Templates: interactiverunner.SelectTemplateBuilder("Kubernetes Namespace", "", ""),
 		})
 		if err != nil {
 			return err
@@ -167,7 +120,7 @@ func (cli *CLI) setK8sSecretInteractively() error {
 	_, result, err := cli.runner.Select(promptui.Select{
 		Label:     fmt.Sprintf("Select kubernetes secret on namespace %s", cli.K8sNamespace),
 		Items:     secrets,
-		Templates: selectTemplateBuilder("Kubernetes Secret", "", ""),
+		Templates: interactiverunner.SelectTemplateBuilder("Kubernetes Secret", "", ""),
 	})
 	if err != nil {
 		return err
@@ -192,7 +145,7 @@ func (cli *CLI) setTargetAccountInteractively() error {
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Select 1Password account: ",
 		Items:     accounts,
-		Templates: selectTemplateBuilder("1Password Account", "Email", "URL"),
+		Templates: interactiverunner.SelectTemplateBuilder("1Password Account", "Email", "URL"),
 	})
 	if err != nil {
 		return err
@@ -221,7 +174,7 @@ func (cli *CLI) setTargetVaultInteractively() error {
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Select 1Password vault: ",
 		Items:     vaults,
-		Templates: selectTemplateBuilder("1Password Vault", "Name", "ID"),
+		Templates: interactiverunner.SelectTemplateBuilder("1Password Vault", "Name", "ID"),
 	})
 	if err != nil {
 		return err
@@ -235,7 +188,7 @@ func (cli *CLI) setTargetItemInteractively() error {
 		_, result, err := cli.runner.Select(promptui.Select{
 			Label:     "Select overwrite mode: ",
 			Items:     []string{"overwrite existing", "create new"},
-			Templates: selectTemplateBuilder("Overwrite mode", "", ""),
+			Templates: interactiverunner.SelectTemplateBuilder("Overwrite mode", "", ""),
 		})
 		if err != nil {
 			return err
@@ -275,7 +228,7 @@ func (cli *CLI) setItemBySelectExisting(currentItems []op.SecretReference) error
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Select 1Password item name: ",
 		Items:     currentItems,
-		Templates: selectTemplateBuilder("1Password Item", "ItemName", "ItemID"),
+		Templates: interactiverunner.SelectTemplateBuilder("1Password Item", "ItemName", "ItemID"),
 	})
 	if err != nil {
 		return err
@@ -319,7 +272,7 @@ func (cli *CLI) setItemByInput(currentItems []op.SecretReference) error {
 			}
 			return nil
 		},
-		Templates: promptTemplateBuilder("1Password Item Name", ""),
+		Templates: interactiverunner.PromptTemplateBuilder("1Password Item Name", ""),
 	})
 	if err != nil {
 		return err
@@ -354,6 +307,9 @@ func (cli *CLI) setDestInteractively() error {
 			if input == "" {
 				return fmt.Errorf("output path is required")
 			}
+			if err := validateOutputPath(input); err != nil {
+				return err
+			}
 			// Check if the directory exists
 			dir := filepath.Dir(input)
 			if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -361,7 +317,7 @@ func (cli *CLI) setDestInteractively() error {
 			}
 			return nil
 		},
-		Templates: promptTemplateBuilder("Output Path", ""),
+		Templates: interactiverunner.PromptTemplateBuilder("Output Path", ""),
 		Default:   defaultOutputPath(cli.K8sSecret),
 	})
 	if err != nil {
@@ -373,7 +329,7 @@ func (cli *CLI) setDestInteractively() error {
 		_, overwrite, err := cli.runner.Select(promptui.Select{
 			Label:     fmt.Sprintf("File %s already exists. Do you want to overwrite it?", result),
 			Items:     []string{"overwrite", "cancel"},
-			Templates: selectTemplateBuilder("Overwrite", "", ""),
+			Templates: interactiverunner.SelectTemplateBuilder("Overwrite", "", ""),
 		})
 		if err != nil {
 			return err
@@ -384,5 +340,32 @@ func (cli *CLI) setDestInteractively() error {
 	}
 
 	cli.Output = result
+	return nil
+}
+
+func (cli *CLI) confirmToProceed(cmds []string) error {
+	fmt.Println("The selected options are same as below.")
+	fmt.Print("    $ optruck")
+	for _, cmd := range cmds {
+		if strings.HasPrefix(cmd, "--") {
+			// break line
+			fmt.Printf(" \\\n      %s", cmd)
+		} else {
+			fmt.Printf(" %s", cmd)
+		}
+	}
+	fmt.Println()
+
+	i, _, err := cli.runner.Select(promptui.Select{
+		Label:     "Do you want to proceed? (yes/no)",
+		Items:     []string{"yes", "no"},
+		Templates: interactiverunner.SelectTemplateBuilder("Do you want to proceed?", "", ""),
+	})
+	if err != nil {
+		return err
+	}
+	if i != 0 {
+		return fmt.Errorf("aborted")
+	}
 	return nil
 }
