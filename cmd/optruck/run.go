@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	utilLogger "github.com/yammerjp/optruck/internal/util/logger"
 	execPackage "k8s.io/utils/exec"
 
 	"github.com/alecthomas/kong"
@@ -46,6 +47,8 @@ func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error
 }
 
 func (cli *CLI) Run() error {
+	utilLogger.SetDefaultLogger(cli.LogLevel)
+
 	action, err := cli.buildOrBuildWithInteractive()
 	if err != nil {
 		return err
