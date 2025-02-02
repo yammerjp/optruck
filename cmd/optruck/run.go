@@ -7,7 +7,18 @@ import (
 	"github.com/alecthomas/kong"
 )
 
-func Run() {
+type BuildInfo struct {
+	Version string
+	Commit  string
+	Date    string
+	BuiltBy string
+}
+
+var buildInfo BuildInfo
+
+func Run(bi BuildInfo) {
+	buildInfo = bi
+
 	cli := CLI{}
 	ctx := kong.Parse(&cli,
 		kong.Name("optruck"),
