@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/manifoldco/promptui"
-	"github.com/yammerjp/optruck/internal/util/interactiverunner"
+	"github.com/yammerjp/optruck/internal/util/interactive"
 	"github.com/yammerjp/optruck/pkg/op"
 )
 
@@ -38,29 +38,29 @@ func (cli *CLI) setDataSourceInteractively() error {
 		// already set
 		return nil
 	}
-	ds, err := interactiverunner.NewDataSourceSelector(cli.runner).Select()
+	ds, err := interactive.NewDataSourceSelector(cli.runner).Select()
 	if err != nil {
 		return err
 	}
 	switch ds {
-	case interactiverunner.DataSourceEnvFile:
+	case interactive.DataSourceEnvFile:
 		slog.Debug("setting env file path")
-		envFilePath, err := interactiverunner.NewEnvFilePrompter(cli.runner).Prompt()
+		envFilePath, err := interactive.NewEnvFilePrompter(cli.runner).Prompt()
 		if err != nil {
 			return err
 		}
 		cli.EnvFile = envFilePath
-	case interactiverunner.DataSourceK8sSecret:
+	case interactive.DataSourceK8sSecret:
 		slog.Debug("setting k8s secret")
 		if cli.K8sNamespace == "" {
-			namespace, err := interactiverunner.NewKubeNamespaceSelector(cli.runner).Select()
+			namespace, err := interactive.NewKubeNamespaceSelector(cli.runner).Select()
 			if err != nil {
 				return err
 			}
 			cli.K8sNamespace = namespace
 		}
 		if cli.K8sSecret == "" {
-			secret, err := interactiverunner.NewKubeSecretSelector(cli.runner, cli.K8sNamespace).Select()
+			secret, err := interactive.NewKubeSecretSelector(cli.runner, cli.K8sNamespace).Select()
 			if err != nil {
 				return err
 			}
@@ -88,7 +88,7 @@ func (cli *CLI) setTargetAccountInteractively() error {
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Select 1Password account: ",
 		Items:     accounts,
-		Templates: interactiverunner.SelectTemplateBuilder("1Password Account", "Email", "URL"),
+		Templates: interactive.SelectTemplateBuilder("1Password Account", "Email", "URL"),
 	})
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (cli *CLI) setTargetVaultInteractively() error {
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Select 1Password vault: ",
 		Items:     vaults,
-		Templates: interactiverunner.SelectTemplateBuilder("1Password Vault", "Name", "ID"),
+		Templates: interactive.SelectTemplateBuilder("1Password Vault", "Name", "ID"),
 	})
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (cli *CLI) setTargetItemInteractively() error {
 		_, result, err := cli.runner.Select(promptui.Select{
 			Label:     "Select overwrite mode: ",
 			Items:     []string{"overwrite existing", "create new"},
-			Templates: interactiverunner.SelectTemplateBuilder("Overwrite mode", "", ""),
+			Templates: interactive.SelectTemplateBuilder("Overwrite mode", "", ""),
 		})
 		if err != nil {
 			return err
@@ -171,7 +171,7 @@ func (cli *CLI) setItemBySelectExisting(currentItems []op.SecretReference) error
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Select 1Password item name: ",
 		Items:     currentItems,
-		Templates: interactiverunner.SelectTemplateBuilder("1Password Item", "ItemName", "ItemID"),
+		Templates: interactive.SelectTemplateBuilder("1Password Item", "ItemName", "ItemID"),
 	})
 	if err != nil {
 		return err
@@ -215,7 +215,7 @@ func (cli *CLI) setItemByInput(currentItems []op.SecretReference) error {
 			}
 			return nil
 		},
-		Templates: interactiverunner.PromptTemplateBuilder("1Password Item Name", ""),
+		Templates: interactive.PromptTemplateBuilder("1Password Item Name", ""),
 	})
 	if err != nil {
 		return err
@@ -260,7 +260,7 @@ func (cli *CLI) setDestInteractively() error {
 			}
 			return nil
 		},
-		Templates: interactiverunner.PromptTemplateBuilder("Output Path", ""),
+		Templates: interactive.PromptTemplateBuilder("Output Path", ""),
 		Default:   defaultOutputPath(cli.K8sSecret),
 	})
 	if err != nil {
@@ -272,7 +272,7 @@ func (cli *CLI) setDestInteractively() error {
 		_, overwrite, err := cli.runner.Select(promptui.Select{
 			Label:     fmt.Sprintf("File %s already exists. Do you want to overwrite it?", result),
 			Items:     []string{"overwrite", "cancel"},
-			Templates: interactiverunner.SelectTemplateBuilder("Overwrite", "", ""),
+			Templates: interactive.SelectTemplateBuilder("Overwrite", "", ""),
 		})
 		if err != nil {
 			return err
@@ -302,7 +302,7 @@ func (cli *CLI) confirmToProceed(cmds []string) error {
 	i, _, err := cli.runner.Select(promptui.Select{
 		Label:     "Do you want to proceed? (yes/no)",
 		Items:     []string{"yes", "no"},
-		Templates: interactiverunner.SelectTemplateBuilder("Do you want to proceed?", "", ""),
+		Templates: interactive.SelectTemplateBuilder("Do you want to proceed?", "", ""),
 	})
 	if err != nil {
 		return err

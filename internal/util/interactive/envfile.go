@@ -1,4 +1,4 @@
-package interactiverunner
+package interactive
 
 import (
 	"fmt"
@@ -12,10 +12,10 @@ const (
 )
 
 type EnvFilePrompter struct {
-	runner InteractiveRunner
+	runner Runner
 }
 
-func NewEnvFilePrompter(runner InteractiveRunner) *EnvFilePrompter {
+func NewEnvFilePrompter(runner Runner) *EnvFilePrompter {
 	return &EnvFilePrompter{runner: runner}
 }
 

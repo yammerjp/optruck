@@ -1,4 +1,4 @@
-package interactiverunner
+package interactive
 
 import (
 	"fmt"
@@ -8,10 +8,10 @@ import (
 )
 
 type KubeNamespaceSelector struct {
-	runner InteractiveRunner
+	runner Runner
 }
 
-func NewKubeNamespaceSelector(runner InteractiveRunner) *KubeNamespaceSelector {
+func NewKubeNamespaceSelector(runner Runner) *KubeNamespaceSelector {
 	return &KubeNamespaceSelector{runner: runner}
 }
 
@@ -34,11 +34,11 @@ func (k *KubeNamespaceSelector) Select() (string, error) {
 }
 
 type KubeSecretSelector struct {
-	runner    InteractiveRunner
+	runner    Runner
 	namespace string
 }
 
-func NewKubeSecretSelector(runner InteractiveRunner, namespace string) *KubeSecretSelector {
+func NewKubeSecretSelector(runner Runner, namespace string) *KubeSecretSelector {
 	return &KubeSecretSelector{runner: runner, namespace: namespace}
 }
 

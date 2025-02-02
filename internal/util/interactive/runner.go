@@ -1,4 +1,4 @@
-package interactiverunner
+package interactive
 
 import (
 	"fmt"
@@ -39,17 +39,17 @@ func PromptTemplateBuilder(successPrefix string, mainField string) *promptui.Pro
 	}
 }
 
-type InteractiveRunner interface {
+type Runner interface {
 	Select(promptui.Select) (int, string, error)
 	Input(promptui.Prompt) (string, error)
 }
 
-type InteractiveRunnerImpl struct{}
+type RunnerImpl struct{}
 
-func (r *InteractiveRunnerImpl) Select(prompt promptui.Select) (int, string, error) {
+func (r *RunnerImpl) Select(prompt promptui.Select) (int, string, error) {
 	return prompt.Run()
 }
 
-func (r *InteractiveRunnerImpl) Input(prompt promptui.Prompt) (string, error) {
+func (r *RunnerImpl) Input(prompt promptui.Prompt) (string, error) {
 	return prompt.Run()
 }

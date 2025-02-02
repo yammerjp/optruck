@@ -1,7 +1,7 @@
 package optruck
 
 import (
-	"github.com/yammerjp/optruck/internal/util/interactiverunner"
+	"github.com/yammerjp/optruck/internal/util/interactive"
 	utilLogger "github.com/yammerjp/optruck/internal/util/logger"
 
 	"github.com/alecthomas/kong"
@@ -24,7 +24,7 @@ func (cli *CLI) Run() error {
 	utilLogger.SetDefaultLogger(cli.LogLevel)
 
 	if cli.Interactive {
-		cli.runner = &interactiverunner.InteractiveRunnerImpl{}
+		cli.runner = &interactive.RunnerImpl{}
 		if err := cli.SetOptionsInteractively(); err != nil {
 			return err
 		}

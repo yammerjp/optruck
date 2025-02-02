@@ -1,4 +1,4 @@
-package interactiverunner
+package interactive
 
 import (
 	"github.com/manifoldco/promptui"
@@ -23,10 +23,10 @@ func (ds DataSourceEnum) String() string {
 }
 
 type DataSourceSelector struct {
-	runner InteractiveRunner
+	runner Runner
 }
 
-func NewDataSourceSelector(runner InteractiveRunner) *DataSourceSelector {
+func NewDataSourceSelector(runner Runner) *DataSourceSelector {
 	return &DataSourceSelector{runner: runner}
 }
 
