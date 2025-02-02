@@ -103,7 +103,7 @@ func (cli *CLI) buildDataSource() (datasources.Source, error) {
 		return &datasources.K8sSecretSource{
 			Namespace:  cli.K8sNamespace,
 			SecretName: cli.K8sSecret,
-			Client:     kube.NewClient(cli.exec),
+			Client:     kube.NewClient(cli.exec, cli.logger),
 			Logger:     cli.logger,
 		}, nil
 	}

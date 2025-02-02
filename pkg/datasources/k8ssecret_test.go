@@ -188,7 +188,7 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 			}
 			fakeExec.CommandScript = []testingexec.FakeCommandAction{cmdAction}
 
-			client := &kube.Client{fakeExec}
+			client := kube.NewClient(fakeExec, slog.Default())
 			source := &K8sSecretSource{
 				Namespace:  tt.namespace,
 				SecretName: tt.secretName,

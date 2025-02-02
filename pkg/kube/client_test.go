@@ -2,6 +2,7 @@ package kube
 
 import (
 	"errors"
+	"log/slog"
 	"reflect"
 	"testing"
 
@@ -105,7 +106,7 @@ func TestGetSecret(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec)
+			client := NewClient(fakeExec, slog.Default())
 			data, err := client.GetSecret(tt.namespace, tt.secretName)
 
 			if tt.expectedErr && err == nil {
@@ -194,7 +195,7 @@ func TestGetNamespaces(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec)
+			client := NewClient(fakeExec, slog.Default())
 			names, err := client.GetNamespaces()
 
 			if tt.expectedErr && err == nil {
@@ -296,7 +297,7 @@ func TestGetSecrets(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec)
+			client := NewClient(fakeExec, slog.Default())
 			names, err := client.GetSecrets(tt.namespace)
 
 			if tt.expectedErr && err == nil {

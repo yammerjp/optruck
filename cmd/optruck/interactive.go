@@ -142,7 +142,7 @@ func (cli *CLI) setEnvFilePathInteractively() error {
 }
 
 func (cli *CLI) setK8sSecretInteractively() error {
-	kubeClient := kube.NewClient(cli.exec)
+	kubeClient := kube.NewClient(cli.exec, cli.logger)
 	namespaces, err := kubeClient.GetNamespaces()
 	if err != nil {
 		return err
