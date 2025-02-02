@@ -24,7 +24,7 @@ func SetDefaultLogger(logLevelStr string) {
 		f = os.Stderr
 	default:
 		logLevel = slog.LevelInfo
-		f = os.Stderr
+		f = io.Discard
 	}
 
 	slog.SetDefault(slog.New(slog.NewJSONHandler(f, &slog.HandlerOptions{Level: logLevel})))

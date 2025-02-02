@@ -27,15 +27,19 @@ func SetExec(e execPackage.Interface) {
 
 type Command struct {
 	ExecCommand
+	bin  string
+	args []string
 }
 
 func NewCommand(bin string, args ...string) Command {
 	cmd := getExec().Command(bin, args...)
-	return Command{ExecCommand: cmd}
+	return Command{ExecCommand: cmd, bin: bin, args: args}
 }
 
 func (c Command) Run(stdin *bytes.Buffer, stdout *bytes.Buffer) error {
 	if stdin != nil {
+		// secret is logged only on debug
+		slog.Debug("set stdin", "stdin", stdin.String())
 		c.SetStdin(stdin)
 	}
 	if stdout != nil {
@@ -43,6 +47,7 @@ func (c Command) Run(stdin *bytes.Buffer, stdout *bytes.Buffer) error {
 	}
 	stderr := bytes.NewBuffer(nil)
 	c.SetStderr(stderr)
+	slog.Info("run command", "bin", c.bin, "args", c.args)
 	err := c.ExecCommand.Run()
 	stddErrStr := stderr.String()
 	if stddErrStr != "" {
