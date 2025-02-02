@@ -3,6 +3,7 @@ package op
 import (
 	"testing"
 
+	utilExec "github.com/yammerjp/optruck/internal/util/exec"
 	"k8s.io/utils/exec"
 	testingexec "k8s.io/utils/exec/testing"
 )
@@ -96,7 +97,8 @@ func TestListVaults(t *testing.T) {
 				},
 			}
 
-			client := NewAccountClient(tt.account, fakeExec)
+			client := NewAccountClient(tt.account)
+			utilExec.SetExec(fakeExec)
 
 			got, err := client.ListVaults()
 			if (err != nil) != tt.wantErr {

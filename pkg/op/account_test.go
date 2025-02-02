@@ -1,6 +1,8 @@
 package op
 
 import (
+	utilExec "github.com/yammerjp/optruck/internal/util/exec"
+
 	"testing"
 
 	"k8s.io/utils/exec"
@@ -96,7 +98,8 @@ func TestListAccounts(t *testing.T) {
 				},
 			}
 
-			client := NewExecutableClient(fakeExec)
+			client := NewExecutableClient()
+			utilExec.SetExec(fakeExec)
 
 			got, err := client.ListAccounts()
 			if (err != nil) != tt.wantErr {

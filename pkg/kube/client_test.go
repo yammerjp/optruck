@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	utilExec "github.com/yammerjp/optruck/internal/util/exec"
+
 	"k8s.io/utils/exec"
 	testingexec "k8s.io/utils/exec/testing"
 )
@@ -105,7 +107,8 @@ func TestGetSecret(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec)
+			client := NewClient()
+			utilExec.SetExec(fakeExec)
 			data, err := client.GetSecret(tt.namespace, tt.secretName)
 
 			if tt.expectedErr && err == nil {
@@ -194,7 +197,8 @@ func TestGetNamespaces(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec)
+			client := NewClient()
+			utilExec.SetExec(fakeExec)
 			names, err := client.GetNamespaces()
 
 			if tt.expectedErr && err == nil {
@@ -296,7 +300,8 @@ func TestGetSecrets(t *testing.T) {
 				},
 			}
 
-			client := NewClient(fakeExec)
+			client := NewClient()
+			utilExec.SetExec(fakeExec)
 			names, err := client.GetSecrets(tt.namespace)
 
 			if tt.expectedErr && err == nil {

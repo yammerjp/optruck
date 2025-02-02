@@ -54,7 +54,7 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 		}
 	}
 
-	return op.NewItemClient(cli.Account, cli.Vault, cli.Item, cli.exec), nil
+	return op.NewItemClient(cli.Account, cli.Vault, cli.Item), nil
 }
 
 func (cli *CLI) buildDataSource() (datasources.Source, error) {
@@ -68,7 +68,7 @@ func (cli *CLI) buildDataSource() (datasources.Source, error) {
 		return &datasources.K8sSecretSource{
 			Namespace:  cli.K8sNamespace,
 			SecretName: cli.K8sSecret,
-			Client:     kube.NewClient(cli.exec),
+			Client:     kube.NewClient(),
 		}, nil
 	}
 	return nil, fmt.Errorf("either --env-file or --k8s-secret is required")

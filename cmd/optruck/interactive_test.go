@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	utilExec "github.com/yammerjp/optruck/internal/util/exec"
+
 	"github.com/manifoldco/promptui"
 	"k8s.io/utils/exec"
 )
@@ -253,7 +255,7 @@ func TestSetDataSourceInteractively(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.cli.runner = tt.mock
-			tt.cli.exec = tt.mockExec
+			utilExec.SetExec(tt.mockExec)
 			err := tt.cli.setDataSourceInteractively()
 			if tt.wantErr {
 				if err == nil {
@@ -340,7 +342,7 @@ func TestSetTargetAccountInteractively(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.cli.runner = tt.mock
-			tt.cli.exec = tt.mockExec
+			utilExec.SetExec(tt.mockExec)
 			err := tt.cli.setTargetAccountInteractively()
 			if tt.wantErr {
 				if err == nil {
@@ -432,7 +434,7 @@ func TestSetTargetVaultInteractively(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.cli.runner = tt.mock
-			tt.cli.exec = tt.mockExec
+			utilExec.SetExec(tt.mockExec)
 			err := tt.cli.setTargetVaultInteractively()
 			if tt.wantErr {
 				if err == nil {
@@ -576,7 +578,7 @@ func TestSetTargetItemInteractively(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.cli.runner = tt.mock
-			tt.cli.exec = tt.mockExec
+			utilExec.SetExec(tt.mockExec)
 			err := tt.cli.setTargetItemInteractively()
 			if tt.wantErr {
 				if err == nil {

@@ -1,6 +1,8 @@
 package datasources
 
 import (
+	utilExec "github.com/yammerjp/optruck/internal/util/exec"
+
 	"errors"
 	"reflect"
 	"strings"
@@ -187,7 +189,9 @@ func TestK8sSecretSource_FetchSecrets(t *testing.T) {
 			}
 			fakeExec.CommandScript = []testingexec.FakeCommandAction{cmdAction}
 
-			client := &kube.Client{fakeExec}
+			client := &kube.Client{}
+			utilExec.SetExec(fakeExec)
+
 			source := &K8sSecretSource{
 				Namespace:  tt.namespace,
 				SecretName: tt.secretName,

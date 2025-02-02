@@ -1,15 +1,10 @@
 package op
 
-import execPackage "k8s.io/utils/exec"
-
 type ExecutableClient struct {
-	exec execPackage.Interface
 }
 
-func NewExecutableClient(exec execPackage.Interface) *ExecutableClient {
-	return &ExecutableClient{
-		exec: exec,
-	}
+func NewExecutableClient() *ExecutableClient {
+	return &ExecutableClient{}
 }
 
 type AccountClient struct {
@@ -17,9 +12,9 @@ type AccountClient struct {
 	Account string
 }
 
-func NewAccountClient(account string, exec execPackage.Interface) *AccountClient {
+func NewAccountClient(account string) *AccountClient {
 	return &AccountClient{
-		ExecutableClient: *NewExecutableClient(exec),
+		ExecutableClient: *NewExecutableClient(),
 		Account:          account,
 	}
 }
@@ -29,9 +24,9 @@ type VaultClient struct {
 	Vault string
 }
 
-func NewVaultClient(account, vault string, exec execPackage.Interface) *VaultClient {
+func NewVaultClient(account, vault string) *VaultClient {
 	return &VaultClient{
-		AccountClient: *NewAccountClient(account, exec),
+		AccountClient: *NewAccountClient(account),
 		Vault:         vault,
 	}
 }
@@ -41,9 +36,9 @@ type ItemClient struct {
 	ItemName string
 }
 
-func NewItemClient(account, vault, itemName string, exec execPackage.Interface) *ItemClient {
+func NewItemClient(account, vault, itemName string) *ItemClient {
 	return &ItemClient{
-		VaultClient: *NewVaultClient(account, vault, exec),
+		VaultClient: *NewVaultClient(account, vault),
 		ItemName:    itemName,
 	}
 }

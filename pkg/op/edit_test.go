@@ -1,6 +1,8 @@
 package op
 
 import (
+	utilExec "github.com/yammerjp/optruck/internal/util/exec"
+
 	"bytes"
 	"encoding/json"
 	"sort"
@@ -320,7 +322,8 @@ func TestEditItem(t *testing.T) {
 				},
 			}
 
-			client := NewItemClient(tt.account, tt.vault, tt.itemName, fakeExec)
+			client := NewItemClient(tt.account, tt.vault, tt.itemName)
+			utilExec.SetExec(fakeExec)
 
 			got, err := client.EditItem(tt.envPairs)
 			if err != tt.wantErr {

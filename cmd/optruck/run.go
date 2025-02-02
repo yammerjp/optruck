@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	utilLogger "github.com/yammerjp/optruck/internal/util/logger"
-	execPackage "k8s.io/utils/exec"
 
 	"github.com/alecthomas/kong"
 	"github.com/manifoldco/promptui"
@@ -26,7 +25,6 @@ func Run() {
 }
 
 func (cli *CLI) buildOrBuildWithInteractive() (actions actions.Action, err error) {
-	cli.exec = execPackage.New()
 	if cli.Interactive {
 		cli.runner = &InteractiveRunnerImpl{}
 		if err = cli.SetOptionsInteractively(); err != nil {

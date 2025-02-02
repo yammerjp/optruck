@@ -7,20 +7,19 @@ import (
 	"os"
 	"strings"
 
-	"k8s.io/utils/exec"
+	utilExec "github.com/yammerjp/optruck/internal/util/exec"
 )
 
 type Client struct {
-	exec.Interface
 }
 
-func NewClient(exec exec.Interface) *Client {
-	return &Client{exec}
+func NewClient() *Client {
+	return &Client{}
 }
 
 func (c *Client) GetSecret(namespace, secretName string) (map[string]string, error) {
 	// TODO: use k8s.io/client-go
-	cmd := c.Command("kubectl", "get", "secret", "-n", namespace, secretName, "-o", "jsonpath={.data}")
+	cmd := utilExec.GetExec().Command("kubectl", "get", "secret", "-n", namespace, secretName, "-o", "jsonpath={.data}")
 	// ex: {"AWS_ACCESS_KEY_ID":"YWJjZGVmZ2hpamtsbW5vcA==","AWS_SECRET_ACCESS_KEY":"YWJjZGVmZ2hpamtsbW5vcA=="}
 	stdout := &bytes.Buffer{}
 	cmd.SetStdout(stdout)
@@ -36,7 +35,7 @@ func (c *Client) GetSecret(namespace, secretName string) (map[string]string, err
 }
 
 func (c *Client) GetNamespaces() ([]string, error) {
-	cmd := c.Command("kubectl", "get", "namespaces", "-o", "jsonpath={.items[*].metadata.name}")
+	cmd := utilExec.GetExec().Command("kubectl", "get", "namespaces", "-o", "jsonpath={.items[*].metadata.name}")
 	stdout := &bytes.Buffer{}
 	cmd.SetStdout(stdout)
 	cmd.SetStderr(os.Stderr)
@@ -48,7 +47,7 @@ func (c *Client) GetNamespaces() ([]string, error) {
 }
 
 func (c *Client) GetSecrets(namespace string) ([]string, error) {
-	cmd := c.Command("kubectl", "get", "secrets", "-n", namespace, "--field-selector", "type=Opaque", "-o", "jsonpath={.items[*].metadata.name}")
+	cmd := utilExec.GetExec().Command("kubectl", "get", "secrets", "-n", namespace, "--field-selector", "type=Opaque", "-o", "jsonpath={.items[*].metadata.name}")
 	stdout := &bytes.Buffer{}
 	cmd.SetStdout(stdout)
 	cmd.SetStderr(os.Stderr)

@@ -1,6 +1,8 @@
 package op
 
 import (
+	utilExec "github.com/yammerjp/optruck/internal/util/exec"
+
 	"testing"
 
 	"k8s.io/utils/exec"
@@ -141,7 +143,8 @@ func TestListItems(t *testing.T) {
 				},
 			}
 
-			client := NewVaultClient(tt.account, tt.vault, fakeExec)
+			client := NewVaultClient(tt.account, tt.vault)
+			utilExec.SetExec(fakeExec)
 
 			got, err := client.ListItems()
 			if err != tt.wantErr {
