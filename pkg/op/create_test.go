@@ -9,6 +9,15 @@ import (
 	testingexec "k8s.io/utils/exec/testing"
 )
 
+type fakeWriter struct {
+	data []byte
+}
+
+func (w *fakeWriter) Write(p []byte) (n int, err error) {
+	w.data = append(w.data, p...)
+	return len(p), nil
+}
+
 var mockCreateStdoutSuccess = `
 {
   "id": "test-id",
