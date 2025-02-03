@@ -1,7 +1,10 @@
 package op
 
 import (
+	"fmt"
 	"sort"
+
+	"github.com/yammerjp/optruck/internal/errors"
 )
 
 type ItemEditRequest struct {
@@ -16,6 +19,14 @@ type ItemEditRequestField struct {
 }
 
 func (c *ItemClient) EditItem(envPairs map[string]string) (*SecretReference, error) {
+	if len(envPairs) == 0 {
+		return nil, errors.NewInvalidArgumentError(
+			"環境変数",
+			"環境変数が空です",
+			"環境変数ファイルまたはKubernetesシークレットに値が設定されていることを確認してください",
+		)
+	}
+
 	req := ItemEditRequest{
 		Fields: make([]ItemEditRequestField, 0, len(envPairs)),
 	}
@@ -40,7 +51,11 @@ func (c *ItemClient) EditItem(envPairs map[string]string) (*SecretReference, err
 	cmd := c.BuildCommand("item", "edit", c.ItemName)
 	var resp ItemResponse
 	if err := cmd.RunWithJSON(req, &resp); err != nil {
-		return nil, err
+		return nil, errors.NewOperationFailedError(
+			fmt.Sprintf("1Passwordアイテム '%s' の編集", c.ItemName),
+			err,
+			"1Password CLIが正しく設定されているか、アカウントとボールトにアクセス権限があるか確認してください",
+		)
 	}
 
 	return c.BuildSecretReference(resp), nil
