@@ -22,9 +22,9 @@ optruck -i
 ```
 
 This will guide you through selecting:
-- The item name in 1Password
-- The 1Password account and vault
+- Where to store secrets in 1Password (item name, account, and vault)
 - The data source (local file or Kubernetes secret)
+- The template file path for generated output
 
 ## Usage
 
@@ -50,7 +50,7 @@ optruck <item> [options]
 
 ### Output Options
 
-- `--output <path>`: Path to save the template file (default: ".env.1password" or "<secret-name>-secret.yaml.1password")
+- `--output <path>`: Path to save the template file (default: ".env.1password" or "&gt;secret-name&lt;-secret.yaml.1password")
 
 ### General Options
 
