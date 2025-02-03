@@ -55,7 +55,7 @@ func (cli *CLI) setDataSourceInteractively(runner interactive.Runner) error {
 			cli.K8sSecret = secret
 		}
 	default:
-		return fmt.Errorf("invalid data source: %s", ds)
+		return fmt.Errorf("invalid data source: %s, select .env file or kubernetes secret", ds)
 	}
 	return nil
 }
@@ -91,7 +91,7 @@ func (cli *CLI) setTargetInteractively(runner interactive.Runner) error {
 			}
 			cli.Item = itemName
 		} else {
-			itemName, err := runner.PromptOpItemName(cli.Account, cli.Vault)
+			itemName, err := runner.PromptOpItemName(cli.Account, cli.Vault, cli.K8sSecret)
 			if err != nil {
 				return err
 			}

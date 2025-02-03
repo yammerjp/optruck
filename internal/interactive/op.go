@@ -2,6 +2,8 @@ package interactive
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -33,7 +35,7 @@ func (r Runner) SelectOpVault(account string) (string, error) {
 		return "", err
 	}
 	if len(vaults) == 0 {
-		return "", fmt.Errorf("no vaults found in account %s", account)
+		return "", fmt.Errorf("no vaults found in account %s, please create a 1Password vault first", account)
 	}
 	i, _, err := r.Select(promptui.Select{
 		Label:     "Select 1Password vault: ",
@@ -78,15 +80,20 @@ func (r Runner) SelectOpItemName(account, vault string) (string, error) {
 	return items[i].ItemID, nil
 }
 
-func (r Runner) PromptOpItemName(account, vault string) (string, error) {
+func (r Runner) PromptOpItemName(account, vault, k8sSecret string) (string, error) {
 	items, err := op.NewVaultClient(account, vault).ListItems()
+	if err != nil {
+		return "", err
+	}
+
+	defaultItemName, err := defaultItemName(k8sSecret)
 	if err != nil {
 		return "", err
 	}
 
 	result, err := r.Input(promptui.Prompt{
 		Label:   "Enter 1Password item name: ",
-		Default: defaultItemName(account, vault),
+		Default: defaultItemName,
 		Validate: func(input string) error {
 			if input == "" {
 				return fmt.Errorf("item name is required")
@@ -115,13 +122,17 @@ func (r Runner) PromptOpItemName(account, vault string) (string, error) {
 	return result, nil
 }
 
-func defaultItemName(account, vault string) string {
-	defaultName := ""
-	// TODO: define default item name format
-	if account != "" {
-		defaultName = fmt.Sprintf("1password_%s_%s", account, vault)
-	} else if vault != "" {
-		defaultName = fmt.Sprintf("1password_%s", vault)
+func defaultItemName(k8sSecret string) (string, error) {
+	// current directory name
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current directory: %w", err)
 	}
-	return defaultName
+	basename := filepath.Base(dir)
+
+	if k8sSecret == "" {
+		return fmt.Sprintf("%s/.env", basename), nil
+	} else {
+		return fmt.Sprintf("%s/%s-secret.yaml", basename, k8sSecret), nil
+	}
 }
