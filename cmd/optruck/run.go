@@ -1,7 +1,7 @@
 package optruck
 
 import (
-	"github.com/yammerjp/optruck/internal/util/interactive"
+	"github.com/yammerjp/optruck/internal/interactive"
 	utilLogger "github.com/yammerjp/optruck/internal/util/logger"
 
 	"github.com/alecthomas/kong"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/yammerjp/optruck/internal/util/interactive"
+	"github.com/yammerjp/optruck/internal/interactive"
 )
 
 func (cli *CLI) SetOptionsInteractively(runner interactive.Runner) error {

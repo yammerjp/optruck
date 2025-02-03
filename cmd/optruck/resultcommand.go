@@ -1,6 +1,6 @@
 package optruck
 
-import "github.com/yammerjp/optruck/internal/util/interactive"
+import "github.com/yammerjp/optruck/internal/interactive"
 
 func (cli CLI) buildResultCommand() ([]string, error) {
 	cmds := []string{"optruck", cli.Item}

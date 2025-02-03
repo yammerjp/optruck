@@ -3,7 +3,7 @@ package optruck
 import (
 	"fmt"
 
-	"github.com/yammerjp/optruck/internal/util/interactive"
+	"github.com/yammerjp/optruck/internal/interactive"
 	"github.com/yammerjp/optruck/pkg/actions"
 	"github.com/yammerjp/optruck/pkg/datasources"
 	"github.com/yammerjp/optruck/pkg/kube"

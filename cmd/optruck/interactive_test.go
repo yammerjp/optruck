@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/yammerjp/optruck/internal/interactive"
 	utilExec "github.com/yammerjp/optruck/internal/util/exec"
-	"github.com/yammerjp/optruck/internal/util/interactive"
 
 	"github.com/manifoldco/promptui"
 	"k8s.io/utils/exec"
