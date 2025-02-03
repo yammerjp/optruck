@@ -3,6 +3,8 @@ package exec
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 
 	execPackage "k8s.io/utils/exec"
@@ -36,10 +38,45 @@ func NewCommand(bin string, args ...string) Command {
 	return Command{ExecCommand: cmd, bin: bin, args: args}
 }
 
+func sealJsonValues(stdin string) string {
+	var data interface{}
+	if err := json.Unmarshal([]byte(stdin), &data); err != nil {
+		return stdin
+	}
+
+	sealedData := sealValues(data)
+	sealed, err := json.Marshal(sealedData)
+	if err != nil {
+		return stdin
+	}
+	return string(sealed)
+}
+
+func sealValues(data interface{}) interface{} {
+	switch v := data.(type) {
+	case string:
+		return "*****"
+	case map[string]interface{}:
+		sealed := make(map[string]interface{})
+		for key, value := range v {
+			sealed[key] = sealValues(value)
+		}
+		return sealed
+	case []interface{}:
+		sealed := make([]interface{}, len(v))
+		for i, value := range v {
+			sealed[i] = sealValues(value)
+		}
+		return sealed
+	default:
+		return v
+	}
+}
+
 func (c Command) Run(stdin *bytes.Buffer, stdout *bytes.Buffer) error {
 	if stdin != nil {
-		// secret is logged only on debug
-		slog.Debug("set stdin", "stdin", stdin.String())
+		// credentials are have to include json values for sealing
+		slog.Debug("set stdin", "stdin", sealJsonValues(stdin.String()))
 		c.SetStdin(stdin)
 	}
 	if stdout != nil {
@@ -69,7 +106,10 @@ func (c Command) RunWithJSON(stdin interface{}, stdout interface{}) error {
 	stdoutBuf := bytes.NewBuffer(nil)
 	err := c.Run(stdinBuf, stdoutBuf)
 	if err != nil {
-		return err
+		if errors.Is(err, execPackage.ErrExecutableNotFound) {
+			return fmt.Errorf("command not found, please install the command `%s`: %w", c.bin, err)
+		}
+		return fmt.Errorf("failed to run command `%s`: %w", c.bin, err)
 	}
 	err = json.Unmarshal(stdoutBuf.Bytes(), stdout)
 	if err != nil {

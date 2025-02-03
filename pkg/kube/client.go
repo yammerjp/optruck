@@ -21,7 +21,7 @@ func (c *Client) GetSecret(namespace, secretName string) (map[string]string, err
 	// ex: {"AWS_ACCESS_KEY_ID":"YWJjZGVmZ2hpamtsbW5vcA==","AWS_SECRET_ACCESS_KEY":"YWJjZGVmZ2hpamtsbW5vcA=="}
 	secrets := make(map[string]string)
 	if err := cmd.RunWithJSON(nil, &secrets); err != nil {
-		return nil, fmt.Errorf("failed to get secret: %w", err)
+		return nil, fmt.Errorf("failed to get secret with `$ kubectl get secret -n %s %s -o jsonpath={.data}`: %w", namespace, secretName, err)
 	}
 	return secrets, nil
 }
@@ -30,12 +30,9 @@ func (c *Client) GetNamespaces() ([]string, error) {
 	cmd := utilExec.NewCommand("kubectl", "get", "namespaces", "-o", "jsonpath={.items[*].metadata.name}")
 	stdout := &bytes.Buffer{}
 	if err := cmd.Run(nil, stdout); err != nil {
-		return nil, fmt.Errorf("failed to get namespaces: %w", err)
+		return nil, fmt.Errorf("failed to get namespaces with `$ kubectl get namespaces -o jsonpath={.items[*].metadata.name}`: %w", err)
 	}
 	output := stdout.String()
-	if output == "" {
-		return []string{}, nil
-	}
 	return strings.Split(output, " "), nil
 }
 
@@ -43,11 +40,8 @@ func (c *Client) GetSecrets(namespace string) ([]string, error) {
 	cmd := utilExec.NewCommand("kubectl", "get", "secrets", "-n", namespace, "--field-selector", "type=Opaque", "-o", "jsonpath={.items[*].metadata.name}")
 	stdout := &bytes.Buffer{}
 	if err := cmd.Run(nil, stdout); err != nil {
-		return nil, fmt.Errorf("failed to get secrets: %w", err)
+		return nil, fmt.Errorf("failed to get secrets with `$ kubectl get secrets -n %s --field-selector type=Opaque -o jsonpath={.items[*].metadata.name}`: %w", namespace, err)
 	}
 	output := stdout.String()
-	if output == "" {
-		return []string{}, nil
-	}
 	return strings.Split(output, " "), nil
 }

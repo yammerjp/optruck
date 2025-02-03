@@ -29,7 +29,7 @@ func (r Runner) Confirm(cmds []string) error {
 		return err
 	}
 	if i != 0 {
-		return fmt.Errorf("aborted")
+		return fmt.Errorf("aborted by user")
 	}
 	return nil
 }

@@ -59,7 +59,7 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 			cli.Vault = vaults[0].Name
 		}
 		if cli.Item == "" {
-			return nil, fmt.Errorf("item specification is required")
+			return nil, fmt.Errorf("item name or ID is required, please specify the item with argument like `$ optruck <item>`")
 		}
 	}
 

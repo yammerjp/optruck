@@ -30,7 +30,7 @@ func (r Runner) PromptOutputPath(k8sSecret string) (string, error) {
 			return "", err
 		}
 		if result == "cancel" {
-			return "", fmt.Errorf("cancelled by user because file %s already exists", result)
+			return "", fmt.Errorf("cancelled by user because file %s already exists, please specify another path", result)
 		}
 	}
 
@@ -46,7 +46,7 @@ func validateOutputPath(path string) error {
 		return err
 	}
 	if stat.IsDir() {
-		return errors.New("output path is already created as a directory")
+		return errors.New("output path is already created as a directory, please specify another path")
 	}
 	return nil
 }

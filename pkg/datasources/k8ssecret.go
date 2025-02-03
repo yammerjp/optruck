@@ -29,10 +29,10 @@ type K8sSecretSource struct {
 
 func (s *K8sSecretSource) FetchSecrets() (map[string]string, error) {
 	if err := validateDNS1123Subdomain(s.Namespace); err != nil {
-		return nil, fmt.Errorf("invalid namespace name: %w", err)
+		return nil, fmt.Errorf("invalid namespace name, please specify a valid namespace name with --k8s-namespace option: %w", err)
 	}
 	if err := validateDNS1123Subdomain(s.SecretName); err != nil {
-		return nil, fmt.Errorf("invalid secret name: %w", err)
+		return nil, fmt.Errorf("invalid secret name, please specify a valid secret name with --k8s-secret option: %w", err)
 	}
 
 	secrets, err := s.Client.GetSecret(s.Namespace, s.SecretName)
