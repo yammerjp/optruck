@@ -2,6 +2,7 @@ package kube
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -33,6 +34,9 @@ func (c *Client) GetNamespaces() ([]string, error) {
 		return nil, fmt.Errorf("failed to get namespaces with `$ kubectl get namespaces -o jsonpath={.items[*].metadata.name}`: %w", err)
 	}
 	output := stdout.String()
+	if output == "" {
+		return nil, errors.New("no namespaces found")
+	}
 	return strings.Split(output, " "), nil
 }
 
@@ -43,5 +47,8 @@ func (c *Client) GetSecrets(namespace string) ([]string, error) {
 		return nil, fmt.Errorf("failed to get secrets with `$ kubectl get secrets -n %s --field-selector type=Opaque -o jsonpath={.items[*].metadata.name}`: %w", namespace, err)
 	}
 	output := stdout.String()
+	if output == "" {
+		return nil, errors.New("no secrets found")
+	}
 	return strings.Split(output, " "), nil
 }

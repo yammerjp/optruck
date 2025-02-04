@@ -144,7 +144,8 @@ func TestGetNamespaces(t *testing.T) {
 			name:          "empty",
 			mockStdout:    "",
 			exitStatus:    0,
-			expectedNames: []string{},
+			expectedErr:   true,
+			expectedNames: nil,
 		},
 		{
 			name:        "error",
@@ -237,7 +238,8 @@ func TestGetSecrets(t *testing.T) {
 			namespace:     "default",
 			mockStdout:    "",
 			exitStatus:    0,
-			expectedNames: []string{},
+			expectedErr:   true,
+			expectedNames: nil,
 		},
 		{
 			name:        "error",
@@ -265,6 +267,14 @@ func TestGetSecrets(t *testing.T) {
 			mockStderr:  "error: forbidden: User \"system:anonymous\" cannot list resource \"secrets\" in API group \"\" in the namespace \"default\"",
 			exitStatus:  1,
 			expectedErr: true,
+		},
+		{
+			name:          "empty",
+			namespace:     "default",
+			mockStdout:    "",
+			exitStatus:    0,
+			expectedErr:   true,
+			expectedNames: nil,
 		},
 	}
 
