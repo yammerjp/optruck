@@ -13,7 +13,7 @@ const maxDNS1123SubdomainLength = 253
 
 func validateDNS1123Subdomain(name string) error {
 	if len(name) > maxDNS1123SubdomainLength {
-		return fmt.Errorf("must be no more than %d characters. Please shorten the name and try again.")
+		return fmt.Errorf("must be no more than %d characters. Please shorten the name and try again.", maxDNS1123SubdomainLength)
 	}
 	if !dns1123SubdomainRegex.MatchString(name) {
 		return fmt.Errorf("must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character. Please use a valid name and try again.")
