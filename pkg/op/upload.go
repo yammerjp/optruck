@@ -12,7 +12,7 @@ var ErrItemAlreadyExists = errors.New("item already exists, use --overwrite to u
 func (c *ItemClient) UploadItem(envPairs map[string]string, overwrite bool) (*SecretReference, error) {
 	refs, err := c.FilterItems(c.ItemName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to filter items: %w", err)
+		return nil, fmt.Errorf("failed to filter items: %w. Please check the item name and try again.", err)
 	}
 	if len(refs) == 0 {
 		slog.Debug("item not found, creating new item", "item", c.ItemName)

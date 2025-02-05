@@ -28,14 +28,14 @@ func (cli *CLI) setDataSourceInteractively(runner interactive.Runner) error {
 	}
 	ds, err := runner.SelectDataSource()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to select data source: %w. Please select a valid data source and try again.", err)
 	}
 	switch ds {
 	case interactive.DataSourceEnvFile:
 		slog.Debug("setting env file path")
 		envFilePath, err := runner.PromptEnvFilePath()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to set env file path: %w. Please provide a valid path and try again.", err)
 		}
 		cli.EnvFile = envFilePath
 	case interactive.DataSourceK8sSecret:
@@ -43,14 +43,14 @@ func (cli *CLI) setDataSourceInteractively(runner interactive.Runner) error {
 		if cli.K8sNamespace == "" {
 			namespace, err := runner.SelectKubeNamespace()
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to select Kubernetes namespace: %w. Please select a valid namespace and try again.", err)
 			}
 			cli.K8sNamespace = namespace
 		}
 		if cli.K8sSecret == "" {
 			secret, err := runner.SelectKubeSecret(cli.K8sNamespace)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to select Kubernetes secret: %w. Please select a valid secret and try again.", err)
 			}
 			cli.K8sSecret = secret
 		}
@@ -64,7 +64,7 @@ func (cli *CLI) setTargetInteractively(runner interactive.Runner) error {
 	if cli.Account == "" {
 		account, err := runner.SelectOpAccount()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to select 1Password account: %w. Please select a valid account and try again.", err)
 		}
 		cli.Account = account
 	}
@@ -72,7 +72,7 @@ func (cli *CLI) setTargetInteractively(runner interactive.Runner) error {
 	if cli.Vault == "" {
 		vault, err := runner.SelectOpVault(cli.Account)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to select 1Password vault: %w. Please select a valid vault and try again.", err)
 		}
 		cli.Vault = vault
 	}
@@ -80,20 +80,20 @@ func (cli *CLI) setTargetInteractively(runner interactive.Runner) error {
 		if !cli.Overwrite {
 			overwrite, err := runner.SelectOpItemOverwriteOrNot()
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to select overwrite mode: %w. Please select a valid mode and try again.", err)
 			}
 			cli.Overwrite = overwrite
 		}
 		if cli.Overwrite {
 			itemName, err := runner.SelectOpItemName(cli.Account, cli.Vault)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to select 1Password item name: %w. Please select a valid item name and try again.", err)
 			}
 			cli.Item = itemName
 		} else {
 			itemName, err := runner.PromptOpItemName(cli.Account, cli.Vault, cli.K8sSecret)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to prompt 1Password item name: %w. Please provide a valid item name and try again.", err)
 			}
 			cli.Item = itemName
 		}
@@ -108,7 +108,7 @@ func (cli *CLI) setDestInteractively(runner interactive.Runner) error {
 	}
 	outputPath, err := runner.PromptOutputPath(cli.K8sSecret)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to prompt output path: %w. Please provide a valid path and try again.", err)
 	}
 	cli.Output = outputPath
 	return nil
