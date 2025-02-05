@@ -12,6 +12,14 @@ optruck is a CLI tool for managing secrets and creating templates with 1Password
 ```bash
 go install github.com/yammerjp/optruck@latest
 ```
+   - OR download the latest release binary:
+```bash
+curl -L https://github.com/yammerjp/optruck/releases/download/v0.1.0/optruck_$(uname -s | tr '[:lower:]' '[:upper:]')_$(uname -m | sed 's/x86_64/amd64/').tar.gz | tar xz -C /usr/local/bin
+```
+   - OR download the latest release binary with sudo:
+```bash
+sudo curl -L https://github.com/yammerjp/optruck/releases/download/v0.1.0/optruck_$(uname -s | tr '[:lower:]' '[:upper:]')_$(uname -m | sed 's/x86_64/amd64/').tar.gz | sudo tar xz -C /usr/local/bin
+```
 
 ## Quick Start
 
