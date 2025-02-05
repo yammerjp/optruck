@@ -41,7 +41,7 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 		if cli.Account == "" {
 			accounts, err := op.NewExecutableClient().ListAccounts()
 			if err != nil {
-				return nil, fmt.Errorf("failed to list accounts: %w", err)
+				return nil, fmt.Errorf("failed to list accounts: %w. Please check your 1Password configuration and try again.", err)
 			}
 			if len(accounts) != 1 {
 				return nil, fmt.Errorf("multiple accounts found, please specify the account with --account option")
@@ -51,7 +51,7 @@ func (cli *CLI) buildOpItemClient(strict bool) (*op.ItemClient, error) {
 		if cli.Vault == "" {
 			vaults, err := op.NewAccountClient(cli.Account).ListVaults()
 			if err != nil {
-				return nil, fmt.Errorf("failed to list vaults: %w", err)
+				return nil, fmt.Errorf("failed to list vaults: %w. Please check your 1Password configuration and try again.", err)
 			}
 			if len(vaults) != 1 {
 				return nil, fmt.Errorf("multiple vaults found, please specify the vault with --vault option")

@@ -13,10 +13,10 @@ const maxDNS1123SubdomainLength = 253
 
 func validateDNS1123Subdomain(name string) error {
 	if len(name) > maxDNS1123SubdomainLength {
-		return fmt.Errorf("must be no more than %d characters", maxDNS1123SubdomainLength)
+		return fmt.Errorf("must be no more than %d characters. Please shorten the name and try again.")
 	}
 	if !dns1123SubdomainRegex.MatchString(name) {
-		return fmt.Errorf("must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character")
+		return fmt.Errorf("must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character. Please use a valid name and try again.")
 	}
 	return nil
 }
@@ -37,7 +37,7 @@ func (s *K8sSecretSource) FetchSecrets() (map[string]string, error) {
 
 	secrets, err := s.Client.GetSecret(s.Namespace, s.SecretName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch secrets from Kubernetes: %w. Please check the namespace and secret name, and try again.", err)
 	}
 
 	return secrets, nil
