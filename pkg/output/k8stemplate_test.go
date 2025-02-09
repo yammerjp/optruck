@@ -41,7 +41,7 @@ func TestK8sSecretTemplateDestWrite(t *testing.T) {
 #   - 1password account: test.1password.com
 #   - 1password vault: TestVault
 # To restore, run the following command:
-#   $ op inject -i test1.yaml | kubectl apply -f -
+#   $ op inject -i test1.yaml --account test.1password.com | kubectl apply -f -
 apiVersion: v1
 kind: Secret
 metadata:

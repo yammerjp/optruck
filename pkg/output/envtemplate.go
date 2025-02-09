@@ -36,7 +36,7 @@ func (d *EnvTemplateDest) Write(secretReference *op.SecretReference) error {
 #   - 1password account: {{.SecretReference.Account}}{{end}}{{if .SecretReference.VaultName}}
 #   - 1password vault: {{.SecretReference.VaultName}}{{end}}
 # To restore, run the following command:
-#   $ op inject -i {{.Dest.GetBasename}} -o .env{{range .GetFieldRefs}}
+#   $ op inject -i {{.Dest.GetBasename}} {{if .SecretReference.Account}}--account {{.SecretReference.Account}} {{end}}-o .env{{range .GetFieldRefs}}
 {{.Label}}={{.Ref}}{{end}}
 `)
 	if err != nil {

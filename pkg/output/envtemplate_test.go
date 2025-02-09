@@ -39,7 +39,7 @@ func TestEnvTemplateDestWrite(t *testing.T) {
 #   - 1password account: test.1password.com
 #   - 1password vault: TestVault
 # To restore, run the following command:
-#   $ op inject -i test1.env -o .env
+#   $ op inject -i test1.env --account test.1password.com -o .env
 DB_USER={{op://vault-id/item-id/DB_USER}}
 DB_PASS={{op://vault-id/item-id/DB_PASS}}
 `,

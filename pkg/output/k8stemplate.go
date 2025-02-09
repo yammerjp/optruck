@@ -38,7 +38,7 @@ func (d *K8sSecretTemplateDest) Write(secretReference *op.SecretReference) error
 #   - 1password account: {{.SecretReference.Account}}{{end}}{{if .SecretReference.VaultName}}
 #   - 1password vault: {{.SecretReference.VaultName}}{{end}}
 # To restore, run the following command:
-#   $ op inject -i {{.Dest.GetBasename}} | kubectl apply -f -
+#   $ op inject -i {{.Dest.GetBasename}} {{if .SecretReference.Account}}--account {{.SecretReference.Account}} {{end}}| kubectl apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
