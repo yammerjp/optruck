@@ -107,13 +107,13 @@ func (c Command) RunWithJSON(stdin interface{}, stdout interface{}) error {
 	err := c.Run(stdinBuf, stdoutBuf)
 	if err != nil {
 		if errors.Is(err, execPackage.ErrExecutableNotFound) {
-			return fmt.Errorf("command not found, please install the command `%s`: %w", c.bin, err)
+			return fmt.Errorf("command not found, please install the command `%s`: %w. Ensure the command is installed and try again.", c.bin, err)
 		}
-		return fmt.Errorf("failed to run command `%s`: %w", c.bin, err)
+		return fmt.Errorf("failed to run command `%s`: %w. Please check the command and try again.", c.bin, err)
 	}
 	err = json.Unmarshal(stdoutBuf.Bytes(), stdout)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal JSON output: %w. Please check the command output and try again.", err)
 	}
 	return nil
 }
